@@ -23,7 +23,9 @@ declare function sc:check($docs as xs:string+)
   :)
   
   for $doc in $docs
-  return sc:ensure-file($doc) => sc:ensure-format() => sc:unzip() => sc:ensure-contents()
+  return 
+  (sc:ensure-file($doc) => sc:ensure-format() => sc:unzip(), 
+  sc:ensure-contents($doc))
 };
 
 declare function sc:ensure-file($path as xs:string)
@@ -55,7 +57,8 @@ as empty-sequence()
   try{
     archive:extract-to(
       sc:unzip-path($zip), 
-      file:read-binary($zip), $sc:DOCX_CONTENT)
+      file:read-binary($zip), $sc:DOCX_CONTENT
+    )    
   }
   catch * {
     error(xs:QName('sc:docx-zip'), 'error unzipping '|| $zip || ' :' || 
@@ -63,6 +66,11 @@ as empty-sequence()
   }
 };
 
+(:~ 
+ : Check that all expected content is present in the DOCX archive.
+ : @param docx the absolute path to the DOCX archive
+ : @return the absolute path(s) to the unzipped content
+ :)
 declare function sc:ensure-contents($docx as xs:string)
 as xs:string+
 {
@@ -71,12 +79,14 @@ as xs:string+
   return
     if(file:exists($path))
     then $path
-    else error(xs:QName('sc:docx-no-content'), 'no content found: '|| $path)
+    else error(xs:QName('sc:docx-no-content'), 'no content found: '|| $path ||
+  '; expected: ' || $x)
 };
 
 (:~ 
  : Return the directory path where the DOCX contents are to be extracted.
  : @param docx absolute path to the DOCX file
+ : @return path to the extraction directory
  :)
 declare function sc:unzip-path($docx as xs:string)
 {

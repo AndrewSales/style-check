@@ -1,7 +1,10 @@
+(:~ Unit tests for the style checking module. :)
+
 module namespace sct = "http://www.andrewsales.com/style-check-tests";
 
 import module namespace sc = "http://www.andrewsales.com/style-check" at "../lib/style-check.xqm";
 
+(:static test cases:)
 declare variable $sct:goodDOCX := resolve-uri("proper.docx", static-base-uri());
 declare variable $sct:badDOCX := resolve-uri("bad.docx", static-base-uri());
 
