@@ -8,8 +8,10 @@ declare variable $sc:DOCX_CONTENT as element(archive:entry)+ :=
  : Process one or more word-processing documents.
  : Currently only DOCX format is supported.
  : @param docs the absolute URI(s) of the document(s) to process
+ : @return manifest of file paths for further processing
  :)
 declare function sc:check($docs as xs:string+)
+as element(files)
 {
   (:
   1. does path exist?
@@ -22,10 +24,23 @@ declare function sc:check($docs as xs:string+)
   7. return the resulting report
   :)
   
-  for $doc in $docs
-  return 
-  (sc:ensure-file($doc) => sc:ensure-format() => sc:unzip(), 
-  sc:ensure-contents($doc))
+  <files>{
+    for $doc in $docs
+    return 
+    (
+      sc:ensure-file($doc) => sc:ensure-format() => sc:unzip(),
+      sc:ensure-contents($doc)
+    )
+  }</files>
+   => sc:simplify-styles()
+};
+
+(:~ Batch-transform the manifest of files passed in.
+ : @param manifest the manifest of files
+ :)
+declare function sc:simplify-styles($manifest as element(files))
+{
+  xslt:transform($manifest, 'xsl/batch-transform.xsl')
 };
 
 declare function sc:ensure-file($path as xs:string)
@@ -72,13 +87,13 @@ as empty-sequence()
  : @return the absolute path(s) to the unzipped content
  :)
 declare function sc:ensure-contents($docx as xs:string)
-as xs:string+
+as element(file)+
 {
   for $x in $sc:DOCX_CONTENT
-  let $path := sc:unzip-path($docx) || '/' || $x
+  let $path := sc:unzip-path($docx) || $x
   return
     if(file:exists($path))
-    then $path
+    then <file>{$path}</file>
     else error(xs:QName('sc:docx-no-content'), 'no content found: '|| $path ||
   '; expected: ' || $x)
 };
