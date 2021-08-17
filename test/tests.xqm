@@ -49,8 +49,54 @@ declare %unit:test function sct:ensure-contents-pass()
   sc:ensure-contents($sct:goodDOCX)
 };
 
+declare %unit:test function sct:ensure-contents-src()
+{
+  let $file := sc:ensure-contents($sct:goodDOCX)
+  
+  return
+  unit:assert-equals(
+     data($file/@src),
+     'word/document.xml'
+  )
+};
+
 (:expected contents not in zip:)
 declare %unit:test('expected', 'sc:docx-no-content') function sct:ensure-contents-fail()
 {
   sc:ensure-contents($sct:badDOCX)
+};
+
+(:~ manifest created before the simplify transform should contain @src paths to 
+the input and @xml:base :)
+declare %unit:test function sct:build-manifest()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX)
+  
+  return
+  (unit:assert(
+    $manifest/file/@xml:base => ends-with('/test/proper/')
+  ),
+  unit:assert(
+    $manifest/file/@src eq "word/document.xml"
+  ))  
+};
+
+(:~ manifest returned after the successful transform should now also contain
+@dest paths to the output :)
+declare %unit:test function sct:simplify-styles()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX) => sc:simplify-styles()
+  
+  return
+  (
+    unit:assert(
+      $manifest/file/@dest => ends-with('/test/proper/out/document.xml')
+    ),
+    unit:assert(
+      $manifest/file/@src eq "word/document.xml"
+    ),
+    unit:assert(
+      $manifest/file/@xml:base => ends-with('/test/proper/')
+    )
+  )
 };
