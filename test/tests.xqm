@@ -82,21 +82,60 @@ declare %unit:test function sct:build-manifest()
 };
 
 (:~ manifest returned after the successful transform should now also contain
-@dest paths to the output :)
+@dest paths to the output
+N.B. we have to do some fixups on the URIs to make this portable :)
 declare %unit:test function sct:simplify-styles()
 {
   let $manifest := sc:build-manifest($sct:goodDOCX) => sc:simplify-styles()
   
   return
   (
-    unit:assert(
-      $manifest/file/@dest => ends-with('/test/proper/out/document.xml')
+    unit:assert-equals(
+      $manifest/file/@dest/data(), 
+      resolve-uri('proper/out/document.xml') => replace('///', '/')
     ),
-    unit:assert(
-      $manifest/file/@src eq "word/document.xml"
+    unit:assert-equals(
+      $manifest/file/@src/data(), "word/document.xml"
     ),
-    unit:assert(
-      $manifest/file/@xml:base => ends-with('/test/proper/')
+    unit:assert-equals(
+      $manifest/file/@xml:base/data(),
+      resolve-uri('proper/') => replace('///', '/')
     )
   )
+};
+
+declare %unit:test function sct:validator-jar()
+{
+  unit:assert-equals(
+    proc:execute(
+      'java',
+     ('-jar', resolve-uri("../etc/validator.jar")=>substring-after('file:///'))
+   )/code,
+   <code>0</code>	(:ran successfully:)
+  )
+};
+
+declare %unit:test function sct:validate-no-errors()
+{
+  let $result := sc:validate(<files><file>{resolve-uri('no-errors/document.xml')}</file></files>)/output
+  
+  return
+  unit:assert-equals(parse-xml($result)/errors/*,())
+};
+
+declare %unit:test function sct:validate-errors()
+{
+  let $result := sc:validate(<files><file dest='{resolve-uri("style-error/document.xml")}'></file></files>)/output => parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error => count(), 2)
+};
+
+declare %unit:test function sct:check()
+{
+  let $result := sc:check(resolve-uri("style-error.docx"))/output
+  => parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error => count(), 2)
 };
