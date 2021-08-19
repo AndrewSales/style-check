@@ -6,4 +6,4 @@ let $paths :=
   let $path := file:resolve-path($path, $dir)
   where file:is-file($path)
   return $path
-return sc:check($paths)
+return sc:check($paths, map{'debug':true(), 'halt-on-invalid':true()})

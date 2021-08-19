@@ -117,7 +117,7 @@ declare %unit:test function sct:validator-jar()
 
 declare %unit:test function sct:validate-no-errors()
 {
-  let $result := sc:validate(<files><file>{resolve-uri('no-errors/document.xml')}</file></files>)/output
+  let $result := sc:validate(<files><file>{resolve-uri('no-errors/document.xml')}</file></files>, map{})/output
   
   return
   unit:assert-equals(parse-xml($result)/errors/*,())
@@ -125,15 +125,29 @@ declare %unit:test function sct:validate-no-errors()
 
 declare %unit:test function sct:validate-errors()
 {
-  let $result := sc:validate(<files><file dest='{resolve-uri("style-error/document.xml")}'></file></files>)/output => parse-xml()
+  let $result := sc:validate(<files><file dest='{resolve-uri("style-error/document.xml")}'></file></files>, map{})/output => parse-xml()
   
   return
   unit:assert-equals($result/errors/error => count(), 2)
 };
 
+declare %unit:test function sct:validate-multiple()
+{
+  let $result := sc:validate(
+    <files>
+    <file dest='{resolve-uri("style-error/document.xml")}'></file>
+    <file dest='{resolve-uri("no-errors/document.xml")}'></file>
+    </files>, 
+    map{})/output
+    =>parse-xml-fragment()
+    
+  return
+  unit:assert-equals($result/errors => count(), 2)
+};
+
 declare %unit:test function sct:check()
 {
-  let $result := sc:check(resolve-uri("style-error.docx"))/output
+  let $result := sc:check(resolve-uri("style-error.docx"), map{})/output
   => parse-xml()
   
   return

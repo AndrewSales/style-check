@@ -32,22 +32,62 @@ declare variable $sc:DOCX_CONTENT as element(archive:entry)+ :=
   <archive:entry>word/document.xml</archive:entry>;	(:expected zip entries:)
 declare variable $sc:STYLE_SCHEMA as xs:anyURI external := 
   resolve-uri('../dtd/style-schema.dtd');
+declare variable $sc:OPT_DEBUG := 'debug';
+declare variable $sc:HALT_ON_INVALID := 'halt-on-invalid';
 
 (:~ 
  : Process one or more word-processing documents.
  : Currently only DOCX format is supported.
+ : Options are: 
+ : 	debug (Boolean): whether to emit debugging messages via trace()
+ : 	halt-on-invalid (Boolean): whether to halt processing on the first invalid 
+ : document returned by sc:validate()
  : @param docs the absolute URI(s) of the document(s) to process
+ : @param options map of options
  : @return manifest of file paths for further processing
  :)
-declare function sc:check($docs as xs:string+)
-as element(files)
+declare function sc:check(
+  $docs as xs:string+,
+  $options as map(*)
+)
 {
-  sc:build-manifest($docs) => sc:simplify-styles()
+  let $_ := sc:debug('check(): ' || string-join($docs, ' '), $options)
+  let $manifest := sc:build-manifest($docs)
+  let $_ := sc:debug('manifest=' || $manifest, $options)
+  return sc:simplify-styles($manifest) => sc:validate($options)
+};
+
+(:~ 
+ : Process one or more word-processing documents.
+ : Currently only DOCX format is supported.
+ : If the option '--halt-on-invalid' is passed, processing halts on the first
+ : invalid file.
+ : @param manifest of files to be validated
+ : @param options map of options
+ : @return one error report per file validated
+ :)
+declare function sc:validate(
+  $manifest as element(files),
+  $options as map(*)
+)
+as element(result)
+{
+  let $_ := sc:debug('validate paths='||
+    string-join($manifest/file/@dest, ' '), $options)
+  return
+  proc:execute(
+    'java',
+    (
+      '-jar', resolve-uri('../etc/validator.jar')=>substring-after('file:///'),
+      $manifest/file/@dest ! data(),
+      if($options ? ($sc:HALT_ON_INVALID)) then '--'||$sc:HALT_ON_INVALID else ()
+    )
+  )
 };
 
 (:~ Build the manifest for the Word XML files extracted. 
  : @param docs the absolute URI(s) of the document(s) to process
- : @return 
+ : @return the manifest
  :)
 declare function sc:build-manifest($docs as xs:string+)
 as element(files)
@@ -74,6 +114,9 @@ as element(files)
   )/files
 };
 
+(:~ Ensure the file to be processed exists.
+ : @param path the file path
+ :)
 declare function sc:ensure-file($path as xs:string)
 as xs:string?
 {
@@ -82,6 +125,10 @@ as xs:string?
   else error(xs:QName('sc:file-not-found'), 'cannot find file: '|| $path)
 };
 
+(:~ Ensure the file to be processed is in the correct format, by examining its
+ : extension.
+ : @param path the file path
+ :)
 declare function sc:ensure-format($path as xs:string)
 as xs:string?
 {
@@ -133,6 +180,7 @@ as element(file)+
 
 (:~ 
  : Return the directory path where the DOCX contents are to be extracted.
+ : This implementation uses the file name, minus extension.
  : @param docx absolute path to the DOCX file
  : @return path to the extraction directory
  :)
@@ -141,4 +189,16 @@ as xs:string
 {
   file:resolve-path(substring-before($docx, '.docx'), file:parent($docx))
   => replace('\\', '/')
+};
+
+(:~ Emit debugging messages to the console.
+ : @param msg the contents of the message to display
+ : @param options map of options (if 'debug' is set to true(), messages are 
+ : emitted)
+ :)
+declare %private function sc:debug($msg as item()*, $options as map(*))
+{
+  if($options?($sc:OPT_DEBUG))
+  then trace('[DEBUG]:' || $msg)
+  else ()
 };
