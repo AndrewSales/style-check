@@ -1,47 +1,53 @@
 (:~ 
- : Module of BaseX XQuery functions to provide style-checking functionality
- : for Microsoft Word documents.
+ : <p>Module of BaseX XQuery functions to provide style-checking functionality
+ : for Microsoft Word documents.</p>
  : 
- : Tested under BaseX 9.5
+ : <p>Tested under BaseX 9.5.</p>
  : The target Word XML format is that in the namespace:
- : 	http://schemas.openxmlformats.org/wordprocessingml/2006/main
+ : 	<code>http://schemas.openxmlformats.org/wordprocessingml/2006/main</code>.
  :
- : The main entry point is sc:check(), which takes one or more paths to *.docx
+ : <p>The main entry point is sc:check(), which takes one or more paths to *.docx
  : documents. Each of these is unzipped, simplified to consist of elements
  : describing paragraph and inline styles, then validated against the style
- : DTD - see path given in $sc:STYLE_SCHEMA.
+ : DTD - see path given in $sc:STYLE_SCHEMA.</p>
  :
- : APPROACH
- : ~~~~~~~~
- : 1. does path exist?
- : 2. is it a DOCX?
- : 3. is it a valid zip?
- : 4. unzip it
- : 5. is it a valid DOCX (does it contain word/document.xml)?
- : 6. transform it to simplified styles
- : 7. validate the result with custom validator
- : 8. return the resulting report
+ : <h2>APPROACH</h2>
+ : <ol><li>does path exist?</li>
+ : <li>is it a DOCX?</li>
+ : <li>is it a valid zip?</li>
+ : <li>unzip it</li>
+ : <li>is it a valid DOCX (does it contain <code>word/document.xml</code>)?</li>
+ : <li>transform it to simplified styles</li>
+ : <li>validate the result with custom validator</li>
+ : <li>return the resulting report</li>
+ : </ol>
  :
- : TODO: use $sc:UNZIP_DIR
+ : <p>TODO: use <code>$sc:UNZIP_DIR</code></p>
  :)
 
 module namespace sc = "http://www.andrewsales.com/style-check";
 
+(:~ where the contents of the DOCX will be extracted to (not currently used) :)
 declare variable $sc:UNZIP_DIR external := '.';
+(:~ the zip entries to be extracted from DOCX :)
 declare variable $sc:DOCX_CONTENT as element(archive:entry)+ := 
   <archive:entry>word/document.xml</archive:entry>;	(:expected zip entries:)
+(:~ location of the style schema applied during validation :)
 declare variable $sc:STYLE_SCHEMA as xs:anyURI external := 
   resolve-uri('../dtd/style-schema.dtd');
-declare variable $sc:OPT_DEBUG := 'debug';
-declare variable $sc:HALT_ON_INVALID := 'halt-on-invalid';
+(:~ debugging flag :)  
+declare variable $sc:OPT_DEBUG as xs:string := 'debug';
+(:~ string of the halt-on-invalid validation option :)
+declare variable $sc:HALT_ON_INVALID as xs:string := 'halt-on-invalid';
 
 (:~ 
  : Process one or more word-processing documents.
  : Currently only DOCX format is supported.
  : Options are: 
- : 	debug (Boolean): whether to emit debugging messages via trace()
- : 	halt-on-invalid (Boolean): whether to halt processing on the first invalid 
- : document returned by sc:validate()
+ : <ul><li>debug (Boolean): whether to emit debugging messages via trace()</li>
+ : <li>halt-on-invalid (Boolean): whether to halt processing on the first invalid 
+ : document returned by <code>sc:validate()</code></li></ul>
+ :
  : @param docs the absolute URI(s) of the document(s) to process
  : @param options map of options
  : @return manifest of file paths for further processing
@@ -60,8 +66,8 @@ declare function sc:check(
 (:~ 
  : Process one or more word-processing documents.
  : Currently only DOCX format is supported.
- : If the option '--halt-on-invalid' is passed, processing halts on the first
- : invalid file.
+ : If the option <code>halt-on-invalid</code> is set to <code>true()</code>, 
+ : processing halts on the first invalid file.
  : @param manifest of files to be validated
  : @param options map of options
  : @return one error report per file validated
@@ -87,7 +93,7 @@ as element(result)
 
 (:~ Build the manifest for the Word XML files extracted. 
  : @param docs the absolute URI(s) of the document(s) to process
- : @return the manifest
+ : @return the manifest, each document in the batch represented by <code>&lt;file src='...'/></code>
  :)
 declare function sc:build-manifest($docs as xs:string+)
 as element(files)
@@ -103,6 +109,7 @@ as element(files)
 
 (:~ Batch-transform the manifest of files passed in.
  : @param manifest the manifest of files
+ : @return the manifest, each document in the batch represented by <code>&lt;file src='...' dest='...'/></code>
  :)
 declare function sc:simplify-styles($manifest as element(files))
 as element(files)
@@ -140,7 +147,7 @@ as xs:string?
 (:~ 
  : Extract the contents of an archive representing a single word-processing
  : document.
- : In this implementation, only the document word/document.xml will be extracted,
+ : In this implementation, only the document <code>word/document.xml</code> will be extracted,
  : to a directory named after the archive filename (minus extension).
  : @param zip the word-processing document
  :)

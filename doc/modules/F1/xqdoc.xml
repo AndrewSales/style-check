@@ -1,0 +1,339 @@
+<xqdoc:xqdoc xmlns:xqdoc="http://www.xqdoc.org/1.0"><xqdoc:control><xqdoc:date>2021-08-20T13:27:42.243+01:00</xqdoc:date><xqdoc:version>1.1</xqdoc:version></xqdoc:control><xqdoc:module type="library"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>style-check.xqm</xqdoc:name><xqdoc:comment><xqdoc:description><p>Module of BaseX XQuery functions to provide style-checking functionality
+for Microsoft Word documents.</p>
+
+<p>Tested under BaseX 9.5.</p>
+The target Word XML format is that in the namespace:
+	<code>http://schemas.openxmlformats.org/wordprocessingml/2006/main</code>.
+
+<p>The main entry point is sc:check(), which takes one or more paths to *.docx
+documents. Each of these is unzipped, simplified to consist of elements
+describing paragraph and inline styles, then validated against the style
+DTD - see path given in $sc:STYLE_SCHEMA.</p>
+
+<h2>APPROACH</h2>
+<ol><li>does path exist?</li>
+<li>is it a DOCX?</li>
+<li>is it a valid zip?</li>
+<li>unzip it</li>
+<li>is it a valid DOCX (does it contain <code>word/document.xml</code>)?</li>
+<li>transform it to simplified styles</li>
+<li>validate the result with custom validator</li>
+<li>return the resulting report</li>
+</ol>
+
+<p>TODO: use <code>$sc:UNZIP_DIR</code></p></xqdoc:description><xqdoc:custom tag="__source">lib/style-check.xqm</xqdoc:custom></xqdoc:comment><xqdoc:body>(:~ 
+ : &lt;p&gt;Module of BaseX XQuery functions to provide style-checking functionality
+ : for Microsoft Word documents.&lt;/p&gt;
+ : 
+ : &lt;p&gt;Tested under BaseX 9.5.&lt;/p&gt;
+ : The target Word XML format is that in the namespace:
+ : 	&lt;code&gt;http://schemas.openxmlformats.org/wordprocessingml/2006/main&lt;/code&gt;.
+ :
+ : &lt;p&gt;The main entry point is sc:check(), which takes one or more paths to *.docx
+ : documents. Each of these is unzipped, simplified to consist of elements
+ : describing paragraph and inline styles, then validated against the style
+ : DTD - see path given in $sc:STYLE_SCHEMA.&lt;/p&gt;
+ :
+ : &lt;h2&gt;APPROACH&lt;/h2&gt;
+ : &lt;ol&gt;&lt;li&gt;does path exist?&lt;/li&gt;
+ : &lt;li&gt;is it a DOCX?&lt;/li&gt;
+ : &lt;li&gt;is it a valid zip?&lt;/li&gt;
+ : &lt;li&gt;unzip it&lt;/li&gt;
+ : &lt;li&gt;is it a valid DOCX (does it contain &lt;code&gt;word/document.xml&lt;/code&gt;)?&lt;/li&gt;
+ : &lt;li&gt;transform it to simplified styles&lt;/li&gt;
+ : &lt;li&gt;validate the result with custom validator&lt;/li&gt;
+ : &lt;li&gt;return the resulting report&lt;/li&gt;
+ : &lt;/ol&gt;
+ :
+ : &lt;p&gt;TODO: use &lt;code&gt;$sc:UNZIP_DIR&lt;/code&gt;&lt;/p&gt;
+ :)
+
+module namespace sc = "http://www.andrewsales.com/style-check";
+
+(:~ where the contents of the DOCX will be extracted to (not currently used) :)
+declare variable $sc:UNZIP_DIR external := '.';
+(:~ the zip entries to be extracted from DOCX :)
+declare variable $sc:DOCX_CONTENT as element(archive:entry)+ := 
+  &lt;archive:entry&gt;word/document.xml&lt;/archive:entry&gt;;	(:expected zip entries:)
+(:~ location of the style schema applied during validation :)
+declare variable $sc:STYLE_SCHEMA as xs:anyURI external := 
+  resolve-uri('../dtd/style-schema.dtd');
+(:~ debugging flag :)  
+declare variable $sc:OPT_DEBUG as xs:string := 'debug';
+(:~ string of the halt-on-invalid validation option :)
+declare variable $sc:HALT_ON_INVALID as xs:string := 'halt-on-invalid';
+
+(:~ 
+ : Process one or more word-processing documents.
+ : Currently only DOCX format is supported.
+ : Options are: 
+ : &lt;ul&gt;&lt;li&gt;debug (Boolean): whether to emit debugging messages via trace()&lt;/li&gt;
+ : &lt;li&gt;halt-on-invalid (Boolean): whether to halt processing on the first invalid 
+ : document returned by &lt;code&gt;sc:validate()&lt;/code&gt;&lt;/li&gt;&lt;/ul&gt;
+ :
+ : @param docs the absolute URI(s) of the document(s) to process
+ : @param options map of options
+ : @return manifest of file paths for further processing
+ :)
+declare function sc:check(
+  $docs as xs:string+,
+  $options as map(*)
+)
+{
+  let $_ := sc:debug('check(): ' || string-join($docs, ' '), $options)
+  let $manifest := sc:build-manifest($docs)
+  let $_ := sc:debug('manifest=' || $manifest, $options)
+  return sc:simplify-styles($manifest) =&gt; sc:validate($options)
+};
+
+(:~ 
+ : Process one or more word-processing documents.
+ : Currently only DOCX format is supported.
+ : If the option &lt;code&gt;halt-on-invalid&lt;/code&gt; is set to &lt;code&gt;true()&lt;/code&gt;, 
+ : processing halts on the first invalid file.
+ : @param manifest of files to be validated
+ : @param options map of options
+ : @return one error report per file validated
+ :)
+declare function sc:validate(
+  $manifest as element(files),
+  $options as map(*)
+)
+as element(result)
+{
+  let $_ := sc:debug('validate paths='||
+    string-join($manifest/file/@dest, ' '), $options)
+  return
+  proc:execute(
+    'java',
+    (
+      '-jar', resolve-uri('../etc/validator.jar')=&gt;substring-after('file:///'),
+      $manifest/file/@dest ! data(),
+      if($options ? ($sc:HALT_ON_INVALID)) then '--'||$sc:HALT_ON_INVALID else ()
+    )
+  )
+};
+
+(:~ Build the manifest for the Word XML files extracted. 
+ : @param docs the absolute URI(s) of the document(s) to process
+ : @return the manifest, each document in the batch represented by &lt;code&gt;&amp;lt;file src='...'/&gt;&lt;/code&gt;
+ :)
+declare function sc:build-manifest($docs as xs:string+)
+as element(files)
+{
+  &lt;files&gt;{
+    $docs !
+    (
+      sc:ensure-file(.) =&gt; sc:ensure-format() =&gt; sc:unzip(),
+      sc:ensure-contents(.)
+    )
+  }&lt;/files&gt;
+};
+
+(:~ Batch-transform the manifest of files passed in.
+ : @param manifest the manifest of files
+ : @return the manifest, each document in the batch represented by &lt;code&gt;&amp;lt;file src='...' dest='...'/&gt;&lt;/code&gt;
+ :)
+declare function sc:simplify-styles($manifest as element(files))
+as element(files)
+{
+  xslt:transform(
+    $manifest, 
+    resolve-uri('../xsl/batch-transform.xsl'),	(:TODO: compile this to SEF too?:)
+    map{'dtd-loc':$sc:STYLE_SCHEMA}
+  )/files
+};
+
+(:~ Ensure the file to be processed exists.
+ : @param path the file path
+ :)
+declare function sc:ensure-file($path as xs:string)
+as xs:string?
+{
+  if(file:exists($path))
+  then $path
+  else error(xs:QName('sc:file-not-found'), 'cannot find file: '|| $path)
+};
+
+(:~ Ensure the file to be processed is in the correct format, by examining its
+ : extension.
+ : @param path the file path
+ :)
+declare function sc:ensure-format($path as xs:string)
+as xs:string?
+{
+  if(ends-with($path, '.docx'))
+  then $path
+  else error(xs:QName('sc:invalid-format'), 'invalid format for file: '|| $path)
+};
+
+(:~ 
+ : Extract the contents of an archive representing a single word-processing
+ : document.
+ : In this implementation, only the document &lt;code&gt;word/document.xml&lt;/code&gt; will be extracted,
+ : to a directory named after the archive filename (minus extension).
+ : @param zip the word-processing document
+ :)
+declare function sc:unzip($zip as xs:string)
+as empty-sequence()
+{
+  try{
+    archive:extract-to(
+      sc:unzip-path($zip), 
+      file:read-binary($zip), 
+      $sc:DOCX_CONTENT
+    )    
+  }
+  catch * {
+    error(xs:QName('sc:docx-zip'), 'error unzipping '|| $zip || ' :' || 
+      $err:description)
+  }
+};
+
+(:~ 
+ : Check that all expected content is present in the DOCX archive.
+ : @param docx the absolute path to the DOCX archive
+ : @return the absolute path(s) to the unzipped content
+ :)
+declare function sc:ensure-contents($docx as xs:string)
+as element(file)+
+{
+  for $x in $sc:DOCX_CONTENT
+  let $unzip-path := sc:unzip-path($docx)
+  let $path := resolve-uri($x, $unzip-path)
+  return
+    if(file:exists($path))
+    then &lt;file xml:base='file:/{$unzip-path}' src='{$x}'/&gt;
+    else error(xs:QName('sc:docx-no-content'), 'no content found: '|| $path ||
+  '; expected: ' || $x)
+};
+
+(:~ 
+ : Return the directory path where the DOCX contents are to be extracted.
+ : This implementation uses the file name, minus extension.
+ : @param docx absolute path to the DOCX file
+ : @return path to the extraction directory
+ :)
+declare function sc:unzip-path($docx as xs:string)
+as xs:string
+{
+  file:resolve-path(substring-before($docx, '.docx'), file:parent($docx))
+  =&gt; replace('\\', '/')
+};
+
+(:~ Emit debugging messages to the console.
+ : @param msg the contents of the message to display
+ : @param options map of options (if 'debug' is set to true(), messages are 
+ : emitted)
+ :)
+declare %private function sc:debug($msg as item()*, $options as map(*))
+{
+  if($options?($sc:OPT_DEBUG))
+  then trace('[DEBUG]:' || $msg)
+  else ()
+};</xqdoc:body></xqdoc:module><xqdoc:namespaces><xqdoc:namespace prefix="sc" uri="http://www.andrewsales.com/style-check"/><xqdoc:namespace prefix="ann" uri="http://www.w3.org/2012/xquery"/></xqdoc:namespaces><xqdoc:imports/><xqdoc:variables><xqdoc:variable><xqdoc:name>sc:UNZIP_DIR</xqdoc:name><xqdoc:comment><xqdoc:description>where the contents of the DOCX will be extracted to (not currently used)</xqdoc:description></xqdoc:comment><xqdoc:type>xs:string</xqdoc:type></xqdoc:variable><xqdoc:variable><xqdoc:name>sc:DOCX_CONTENT</xqdoc:name><xqdoc:comment><xqdoc:description>the zip entries to be extracted from DOCX</xqdoc:description></xqdoc:comment><xqdoc:type occurrence="+">element(archive:entry)</xqdoc:type></xqdoc:variable><xqdoc:variable><xqdoc:name>sc:STYLE_SCHEMA</xqdoc:name><xqdoc:comment><xqdoc:description>location of the style schema applied during validation</xqdoc:description></xqdoc:comment><xqdoc:type>xs:anyURI</xqdoc:type></xqdoc:variable><xqdoc:variable><xqdoc:name>sc:OPT_DEBUG</xqdoc:name><xqdoc:comment><xqdoc:description>debugging flag</xqdoc:description></xqdoc:comment><xqdoc:type>xs:string</xqdoc:type></xqdoc:variable><xqdoc:variable><xqdoc:name>sc:HALT_ON_INVALID</xqdoc:name><xqdoc:comment><xqdoc:description>string of the halt-on-invalid validation option</xqdoc:description></xqdoc:comment><xqdoc:type>xs:string</xqdoc:type></xqdoc:variable></xqdoc:variables><xqdoc:functions><xqdoc:function arity="2"><xqdoc:comment><xqdoc:description>Process one or more word-processing documents.
+Currently only DOCX format is supported.
+Options are: 
+<ul><li>debug (Boolean): whether to emit debugging messages via trace()</li>
+<li>halt-on-invalid (Boolean): whether to halt processing on the first invalid 
+document returned by <code>sc:validate()</code></li></ul></xqdoc:description><xqdoc:param>docs the absolute URI(s) of the document(s) to process</xqdoc:param><xqdoc:param>options map of options</xqdoc:param><xqdoc:return>manifest of file paths for further processing</xqdoc:return></xqdoc:comment><xqdoc:name>sc:check</xqdoc:name><xqdoc:signature>declare function sc:check($docs as xs:string+ , $options as map(*)) as item()*</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>docs</xqdoc:name><xqdoc:type occurrence="+">xs:string</xqdoc:type></xqdoc:parameter><xqdoc:parameter><xqdoc:name>options</xqdoc:name><xqdoc:type>map(*)</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>debug</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>string-join</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>build-manifest</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>debug</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>simplify-styles</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>validate</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>docs</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>options</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>docs</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>options</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>options</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:check(
+  $docs as xs:string+,
+  $options as map(*)
+)
+{
+  let $_ := sc:debug('check(): ' || string-join($docs, ' '), $options)
+  let $manifest := sc:build-manifest($docs)
+  let $_ := sc:debug('manifest=' || $manifest, $options)
+  return sc:simplify-styles($manifest) =&gt; sc:validate($options)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="2"><xqdoc:comment><xqdoc:description>Process one or more word-processing documents.
+Currently only DOCX format is supported.
+If the option <code>halt-on-invalid</code> is set to <code>true()</code>, 
+processing halts on the first invalid file.</xqdoc:description><xqdoc:param>manifest of files to be validated</xqdoc:param><xqdoc:param>options map of options</xqdoc:param><xqdoc:return>one error report per file validated</xqdoc:return></xqdoc:comment><xqdoc:name>sc:validate</xqdoc:name><xqdoc:signature>declare function sc:validate($manifest as element(files) , $options as map(*)) as element(result)</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>manifest</xqdoc:name><xqdoc:type>element(files)</xqdoc:type></xqdoc:parameter><xqdoc:parameter><xqdoc:name>options</xqdoc:name><xqdoc:type>map(*)</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type>element(result)</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>debug</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>string-join</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/proc</xqdoc:uri><xqdoc:name>execute</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>data</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="4"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>substring-after</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>options</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>options</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>HALT_ON_INVALID</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>HALT_ON_INVALID</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:validate(
+  $manifest as element(files),
+  $options as map(*)
+)
+as element(result)
+{
+  let $_ := sc:debug('validate paths='||
+    string-join($manifest/file/@dest, ' '), $options)
+  return
+  proc:execute(
+    'java',
+    (
+      '-jar', resolve-uri('../etc/validator.jar')=&gt;substring-after('file:///'),
+      $manifest/file/@dest ! data(),
+      if($options ? ($sc:HALT_ON_INVALID)) then '--'||$sc:HALT_ON_INVALID else ()
+    )
+  )
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="1"><xqdoc:comment><xqdoc:description>Build the manifest for the Word XML files extracted.</xqdoc:description><xqdoc:param>docs the absolute URI(s) of the document(s) to process</xqdoc:param><xqdoc:return>the manifest, each document in the batch represented by <code>&lt;file src='...'/&gt;</code></xqdoc:return></xqdoc:comment><xqdoc:name>sc:build-manifest</xqdoc:name><xqdoc:signature>declare function sc:build-manifest($docs as xs:string+) as element(files)</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>docs</xqdoc:name><xqdoc:type occurrence="+">xs:string</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type>element(files)</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-file</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-contents</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-format</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>unzip</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>docs</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:build-manifest($docs as xs:string+)
+as element(files)
+{
+  &lt;files&gt;{
+    $docs !
+    (
+      sc:ensure-file(.) =&gt; sc:ensure-format() =&gt; sc:unzip(),
+      sc:ensure-contents(.)
+    )
+  }&lt;/files&gt;
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="1"><xqdoc:comment><xqdoc:description>Batch-transform the manifest of files passed in.</xqdoc:description><xqdoc:param>manifest the manifest of files</xqdoc:param><xqdoc:return>the manifest, each document in the batch represented by <code>&lt;file src='...' dest='...'/&gt;</code></xqdoc:return></xqdoc:comment><xqdoc:name>sc:simplify-styles</xqdoc:name><xqdoc:signature>declare function sc:simplify-styles($manifest as element(files)) as element(files)</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>manifest</xqdoc:name><xqdoc:type>element(files)</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type>element(files)</xqdoc:type></xqdoc:return><xqdoc:invoked arity="3"><xqdoc:uri>http://basex.org/modules/xslt</xqdoc:uri><xqdoc:name>transform</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>STYLE_SCHEMA</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:simplify-styles($manifest as element(files))
+as element(files)
+{
+  xslt:transform(
+    $manifest, 
+    resolve-uri('../xsl/batch-transform.xsl'),	(:TODO: compile this to SEF too?:)
+    map{'dtd-loc':$sc:STYLE_SCHEMA}
+  )/files
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="1"><xqdoc:comment><xqdoc:description>Ensure the file to be processed exists.</xqdoc:description><xqdoc:param>path the file path</xqdoc:param></xqdoc:comment><xqdoc:name>sc:ensure-file</xqdoc:name><xqdoc:signature>declare function sc:ensure-file($path as xs:string) as xs:string?</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>path</xqdoc:name><xqdoc:type>xs:string</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type occurrence="?">xs:string</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://expath.org/ns/file</xqdoc:uri><xqdoc:name>exists</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>error</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2001/XMLSchema</xqdoc:uri><xqdoc:name>QName</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>path</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>path</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>path</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:ensure-file($path as xs:string)
+as xs:string?
+{
+  if(file:exists($path))
+  then $path
+  else error(xs:QName('sc:file-not-found'), 'cannot find file: '|| $path)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="1"><xqdoc:comment><xqdoc:description>Ensure the file to be processed is in the correct format, by examining its
+extension.</xqdoc:description><xqdoc:param>path the file path</xqdoc:param></xqdoc:comment><xqdoc:name>sc:ensure-format</xqdoc:name><xqdoc:signature>declare function sc:ensure-format($path as xs:string) as xs:string?</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>path</xqdoc:name><xqdoc:type>xs:string</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type occurrence="?">xs:string</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>ends-with</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>error</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2001/XMLSchema</xqdoc:uri><xqdoc:name>QName</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>path</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>path</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>path</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:ensure-format($path as xs:string)
+as xs:string?
+{
+  if(ends-with($path, '.docx'))
+  then $path
+  else error(xs:QName('sc:invalid-format'), 'invalid format for file: '|| $path)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="1"><xqdoc:comment><xqdoc:description>Extract the contents of an archive representing a single word-processing
+document.
+In this implementation, only the document <code>word/document.xml</code> will be extracted,
+to a directory named after the archive filename (minus extension).</xqdoc:description><xqdoc:param>zip the word-processing document</xqdoc:param></xqdoc:comment><xqdoc:name>sc:unzip</xqdoc:name><xqdoc:signature>declare function sc:unzip($zip as xs:string) as empty-sequence()</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>zip</xqdoc:name><xqdoc:type>xs:string</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type>empty-sequence()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="3"><xqdoc:uri>http://basex.org/modules/archive</xqdoc:uri><xqdoc:name>extract-to</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>unzip-path</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://expath.org/ns/file</xqdoc:uri><xqdoc:name>read-binary</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>error</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2001/XMLSchema</xqdoc:uri><xqdoc:name>QName</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>zip</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>zip</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>DOCX_CONTENT</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>zip</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xqt-errors</xqdoc:uri><xqdoc:name>description</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:unzip($zip as xs:string)
+as empty-sequence()
+{
+  try{
+    archive:extract-to(
+      sc:unzip-path($zip), 
+      file:read-binary($zip), 
+      $sc:DOCX_CONTENT
+    )    
+  }
+  catch * {
+    error(xs:QName('sc:docx-zip'), 'error unzipping '|| $zip || ' :' || 
+      $err:description)
+  }
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="1"><xqdoc:comment><xqdoc:description>Check that all expected content is present in the DOCX archive.</xqdoc:description><xqdoc:param>docx the absolute path to the DOCX archive</xqdoc:param><xqdoc:return>the absolute path(s) to the unzipped content</xqdoc:return></xqdoc:comment><xqdoc:name>sc:ensure-contents</xqdoc:name><xqdoc:signature>declare function sc:ensure-contents($docx as xs:string) as element(file)+</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>docx</xqdoc:name><xqdoc:type>xs:string</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type occurrence="+">element(file)</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>unzip-path</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://expath.org/ns/file</xqdoc:uri><xqdoc:name>exists</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>error</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2001/XMLSchema</xqdoc:uri><xqdoc:name>QName</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>DOCX_CONTENT</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>docx</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>x</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>unzip-path</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>path</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>unzip-path</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>x</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>path</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>x</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:ensure-contents($docx as xs:string)
+as element(file)+
+{
+  for $x in $sc:DOCX_CONTENT
+  let $unzip-path := sc:unzip-path($docx)
+  let $path := resolve-uri($x, $unzip-path)
+  return
+    if(file:exists($path))
+    then &lt;file xml:base='file:/{$unzip-path}' src='{$x}'/&gt;
+    else error(xs:QName('sc:docx-no-content'), 'no content found: '|| $path ||
+  '; expected: ' || $x)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="1"><xqdoc:comment><xqdoc:description>Return the directory path where the DOCX contents are to be extracted.
+This implementation uses the file name, minus extension.</xqdoc:description><xqdoc:param>docx absolute path to the DOCX file</xqdoc:param><xqdoc:return>path to the extraction directory</xqdoc:return></xqdoc:comment><xqdoc:name>sc:unzip-path</xqdoc:name><xqdoc:signature>declare function sc:unzip-path($docx as xs:string) as xs:string</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>docx</xqdoc:name><xqdoc:type>xs:string</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type>xs:string</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://expath.org/ns/file</xqdoc:uri><xqdoc:name>resolve-path</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>substring-before</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://expath.org/ns/file</xqdoc:uri><xqdoc:name>parent</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="6"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>replace</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>docx</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>docx</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:unzip-path($docx as xs:string)
+as xs:string
+{
+  file:resolve-path(substring-before($docx, '.docx'), file:parent($docx))
+  =&gt; replace('\\', '/')
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="2"><xqdoc:comment><xqdoc:description>Emit debugging messages to the console.</xqdoc:description><xqdoc:param>msg the contents of the message to display</xqdoc:param><xqdoc:param>options map of options (if 'debug' is set to true(), messages are 
+emitted)</xqdoc:param></xqdoc:comment><xqdoc:name>sc:debug</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="private"/></xqdoc:annotations><xqdoc:signature>declare %private function sc:debug($msg as item()* , $options as map(*)) as item()*</xqdoc:signature><xqdoc:parameters><xqdoc:parameter><xqdoc:name>msg</xqdoc:name><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:parameter><xqdoc:parameter><xqdoc:name>options</xqdoc:name><xqdoc:type>map(*)</xqdoc:type></xqdoc:parameter></xqdoc:parameters><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>trace</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>options</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>OPT_DEBUG</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>msg</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sc:debug($msg as item()*, $options as map(*))
+{
+  if($options?($sc:OPT_DEBUG))
+  then trace('[DEBUG]:' || $msg)
+  else ()
+}</xqdoc:body></xqdoc:function></xqdoc:functions></xqdoc:xqdoc>

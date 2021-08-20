@@ -1,0 +1,17 @@
+{
+  "swagger":"2.0",
+  "info":{
+    "version":"1.0.0",
+    "title":"Generated from style-check at 2021-08-20T13:27:42.243+01:00",
+    "description":"Example generation from RESTXQ xquery sources",
+    "termsOfService":"http:\/\/swagger.io\/terms\/",
+    "contact":{
+      "name":"Andy Bunce"
+    },
+    "license":{
+      "name":"MIT"
+    }
+  },
+  "host":"http:\/\/localhost:8984\/",
+  "basePath":"\/api"
+}

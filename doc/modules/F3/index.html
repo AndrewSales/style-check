@@ -1,0 +1,38 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><meta http-equiv="Generator" content="xqdoca - https://github.com/quodatum/xqdoca"><title>style-check - xqDocA
+        </title><link rel="shortcut icon" type="image/x-icon" href="../../resources/xqdoc.png"><link rel="stylesheet" type="text/css" href="../../resources/prism/prism.css"><link rel="stylesheet" type="text/css" href="../../resources/page.css"><link rel="stylesheet" type="text/css" href="../../resources/query.css"><link rel="stylesheet" type="text/css" href="../../resources/base.css"></head><body class="home" id="top"><div id="main"><div><h1><span class="badge badge-info">test.xq</span>&nbsp;
+			<small>main module</small><div style="float:right"></div></h1><nav id="toc"><h2><a href="../../index.html">style-check</a>
+                / Module
+       </h2><h3><a id="contents"></a><span class="">test.xq</span></h3><ol class="toc"><li><a href="#summary"><span class="secno">1 </span><span class="content">Summary</span></a></li><li><a href="#related"><span class="secno">2 </span><span class="content">Related</span></a></li><li><a href="#imports"><span class="secno">2 </span><span class="content">Imports</span></a></li><li><a href="#variables"><span class="secno">3 </span><span class="content">Variables</span></a><ol class="toc"></ol></li><li><a href="#functions"><span class="secno">4 </span><span class="content">Functions</span></a><ol class="toc"><li><a href="#local:xqDoc-main"><span class="secno">4.1</span><span class="content" title="">local:xqDoc-main<div style="float:right"></div></span></a></li></ol></li><li><a href="#namespaces"><span class="secno">5 </span><span class="content">Namespaces</span></a></li><li><a href="#restxq"><span class="secno">6 </span><span class="content">RestXQ</span></a></li><li><a href="#source"><span class="secno">7 </span><span class="content">Source</span></a></li></ol></nav><section id="summary"><h2>Summary</h2><div></div><dl><dt>Tags</dt><dd></dd></dl></section><section id="related"><h2>Related documents</h2><table class="data"><thead><th>View</th><th>Description</th><th>Format</th></thead><tbody><tr><td><a href="xqdoc.xml">xqdoc</a></td><td>xqDoc xml file from the source module</td><td>xml</td></tr><tr><td><a href="xqparse.xml">xqparse</a></td><td>xqparse xml file from the source module</td><td>xml</td></tr></tbody></table></section><section id="imports"><h2>Imports</h2><p>
+    This module is imported by
+    <span class="badge badge-info">0</span> modules, it imports
+    <span class="badge badge-info">1</span> modules.
+    </p><div style="display: flex;width:100%; justify-content: space-between;"><div style="width:40%;">(None)</div><div style="display: flex; flex-direction: column; justify-content: center;"><div><div>imports</div>→</div><div class="badge badge-info">this</div><div><div>imports</div>→</div></div><div style="width:40%;"><div><span><a href="../../modules/F1/index.html" title="lib/style-check.xqm">http://www.andrewsales.com/style-check</a></span></div></div></div></section><section id="variables"><h2>Variables</h2><p>None</p></section><section id="functions"><h2>Functions</h2><div class="div3"><h3><a id="local:xqDoc-main"></a><a id="{http://www.w3.org/2005/xquery-local-functions}xqDoc-main#0"></a>4.1&nbsp;local:xqDoc-main<div style="float:right"><a href="#local:xqDoc-main">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.w3.org/2005/xquery-local-functions}xqDoc-main#0">local:xqDoc-main#0</a></span></p><dt class="label">Summary</dt><dd>pseudo main function</dd><dt class="label">Signature</dt><dd><div class="proto"><code class="function">local:xqDoc-main</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"></code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type"></code></li></ul></dd><details><summary>Invokes 6 functions from 3 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://expath.org/ns/file}is-file#1</span></li><li><span class="badge badge-warning" title="Externally defined">{http://expath.org/ns/file}list#1</span></li><li><span class="badge badge-warning" title="Externally defined">{http://expath.org/ns/file}resolve-path#2</span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}check#2" title="lib/style-check.xqm">sc:check#2</a></span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}parse-xml-fragment#3</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}true#1</span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Source</summary><pre><code class="language-xquery">let $dir := 'C:\projects\CMS\ALS_91\'
+let $paths := 
+  for $path in file:list($dir)
+  let $path := file:resolve-path($path, $dir)
+  where file:is-file($path)
+  return $path
+return sc:check($paths, map{'debug':true(), 'halt-on-invalid':true()})/output
+ =&gt; parse-xml-fragment() let $dir := 'C:\projects\CMS\ALS_91\'
+let $paths := 
+  for $path in file:list($dir)
+  let $path := file:resolve-path($path, $dir)
+  where file:is-file($path)
+  return $path
+return sc:check($paths, map{'debug':true(), 'halt-on-invalid':true()})/output
+ =&gt; parse-xml-fragment()</code></pre></details></div></section><section id="namespaces"><h2>Namespaces</h2><p>The following namespaces are defined:</p><table class="data" style="float:none"><thead><tr><th>Prefix</th><th>Uri</th></tr></thead><tbody><tr><td>local</td><td><span class="badge badge-warning" title="Externally defined">http://www.w3.org/2005/xquery-local-functions</span></td></tr><tr><td>sc</td><td><span><a href="../../modules/F1/index.html" title="lib/style-check.xqm">http://www.andrewsales.com/style-check</a></span></td></tr></tbody></table></section><div class="div2"><h2><a id="restxq"></a>6 RestXQ</h2><p>None</p></div><section id="source"><h2>Source Code</h2><pre><code class="language-xquery">import module namespace sc = "http://www.andrewsales.com/style-check" at "../lib/style-check.xqm";
+
+let $dir := 'C:\projects\CMS\ALS_91\'
+let $paths := 
+  for $path in file:list($dir)
+  let $path := file:resolve-path($path, $dir)
+  where file:is-file($path)
+  return $path
+return sc:check($paths, map{'debug':true(), 'halt-on-invalid':true()})/output
+ =&gt; parse-xml-fragment()</code></pre></section></div></div><div class="footer"><p style="text-align:right">Generated by 
+            <a href="https://github.com/Quodatum/xqdoca" target="_blank">xqDocA</a>
+            &nbsp; 0.2 on <span title="2021-08-20T13:27:42.243+01:00">Friday, August 20th 2021</span></p></div><script src="../../resources/prism/prism.js" type="text/javascript"></script><script src="../../resources/xqdoca.js" type="text/javascript"></script></body></html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><meta http-equiv="Generator" content="xqdoca - https://github.com/quodatum/xqdoca"><title>style-check - xqDocA
+        </title><link rel="shortcut icon" type="image/x-icon" href="../../resources/xqdoc.png"><link rel="stylesheet" type="text/css" href="../../resources/prism/prism.css"><link rel="stylesheet" type="text/css" href="../../resources/page.css"><link rel="stylesheet" type="text/css" href="../../resources/query.css"><link rel="stylesheet" type="text/css" href="../../resources/base.css"></head><body class="home" id="top"><div id="main"><div><h1><span class="badge badge-info">http://www.andrewsales.com/style-check-tests</span>&nbsp;
+			<small>library module</small><div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></h1><nav id="toc"><h2><a href="../../index.html">style-check</a>
+                / Module
+       </h2><h3><a id="contents"></a><span class="">http://www.andrewsales.com/style-check-tests</span></h3><ol class="toc"><li><a href="#summary"><span class="secno">1 </span><span class="content">Summary</span></a></li><li><a href="#related"><span class="secno">2 </span><span class="content">Related</span></a></li><li><a href="#imports"><span class="secno">2 </span><span class="content">Imports</span></a></li><li><a href="#variables"><span class="secno">3 </span><span class="content">Variables</span></a><ol class="toc"><li><a href="#$sct:badDOCX"><span class="secno">3.1</span><span class="content">$sct:badDOCX</span><div style="float:right"></div></a></li><li><a href="#$sct:goodDOCX"><span class="secno">3.2</span><span class="content">$sct:goodDOCX</span><div style="float:right"></div></a></li></ol></li><li><a href="#functions"><span class="secno">4 </span><span class="content">Functions</span></a><ol class="toc"><li><a href="#sct:build-manifest"><span class="secno">4.1</span><span class="content" title="">sct:build-manifest<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:check"><span class="secno">4.2</span><span class="content" title="">sct:check<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:ensure-contents-fail"><span class="secno">4.3</span><span class="content" title="">sct:ensure-contents-fail<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:ensure-contents-pass"><span class="secno">4.4</span><span class="content" title="">sct:ensure-contents-pass<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:ensure-contents-src"><span class="secno">4.5</span><span class="content" title="">sct:ensure-contents-src<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:ensure-file-fail"><span class="secno">4.6</span><span class="content" title="">sct:ensure-file-fail<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:ensure-file-pass"><span class="secno">4.7</span><span class="content" title="">sct:ensure-file-pass<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:ensure-format-fail"><span class="secno">4.8</span><span class="content" title="">sct:ensure-format-fail<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:ensure-format-pass"><span class="secno">4.9</span><span class="content" title="">sct:ensure-format-pass<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:simplify-styles"><span class="secno">4.10</span><span class="content" title="">sct:simplify-styles<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:unzip-fail"><span class="secno">4.11</span><span class="content" title="">sct:unzip-fail<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:unzip-pass"><span class="secno">4.12</span><span class="content" title="">sct:unzip-pass<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:validate-errors"><span class="secno">4.13</span><span class="content" title="">sct:validate-errors<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:validate-multiple"><span class="secno">4.14</span><span class="content" title="">sct:validate-multiple<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:validate-no-errors"><span class="secno">4.15</span><span class="content" title="">sct:validate-no-errors<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li><li><a href="#sct:validator-jar"><span class="secno">4.16</span><span class="content" title="">sct:validator-jar<div style="float:right"><span class="badge badge-info" title="Other annotations">A</span></div></span></a></li></ol></li><li><a href="#namespaces"><span class="secno">5 </span><span class="content">Namespaces</span></a></li><li><a href="#restxq"><span class="secno">6 </span><span class="content">RestXQ</span></a></li><li><a href="#source"><span class="secno">7 </span><span class="content">Source</span></a></li></ol></nav><section id="summary"><h2>Summary</h2><div>Unit tests for the style checking module.</div><dl><dt>Tags</dt><dd><p>__source : test/tests.xqm</p></dd></dl></section><section id="related"><h2>Related documents</h2><table class="data"><thead><th>View</th><th>Description</th><th>Format</th></thead><tbody><tr><td><a href="xqdoc.xml">xqdoc</a></td><td>xqDoc xml file from the source module</td><td>xml</td></tr><tr><td><a href="xqparse.xml">xqparse</a></td><td>xqparse xml file from the source module</td><td>xml</td></tr></tbody></table></section><section id="imports"><h2>Imports</h2><p>
+    This module is imported by
+    <span class="badge badge-info">0</span> modules, it imports
+    <span class="badge badge-info">1</span> modules.
+    </p><div style="display: flex;width:100%; justify-content: space-between;"><div style="width:40%;">(None)</div><div style="display: flex; flex-direction: column; justify-content: center;"><div><div>imports</div>→</div><div class="badge badge-info">this</div><div><div>imports</div>→</div></div><div style="width:40%;"><div><span><a href="../../modules/F1/index.html" title="lib/style-check.xqm">http://www.andrewsales.com/style-check</a></span></div></div></div></section><section id="variables"><h2>Variables</h2><div class="div3"><h3><a id="$sct:badDOCX"></a><a id="{http://www.andrewsales.com/style-check-tests}$badDOCX"></a>3.1&nbsp;$sct:badDOCX</h3><dl><dt class="label">Summary</dt><dd></dd><dt class="label">Type</dt><dd>xs:anyURI?</dd></dl></div><div class="div3"><h3><a id="$sct:goodDOCX"></a><a id="{http://www.andrewsales.com/style-check-tests}$goodDOCX"></a>3.2&nbsp;$sct:goodDOCX</h3><dl><dt class="label">Summary</dt><dd></dd><dt class="label">Type</dt><dd>xs:anyURI?</dd></dl></div></section><section id="functions"><h2>Functions</h2><div class="div3"><h3><a id="sct:build-manifest"></a><a id="{http://www.andrewsales.com/style-check-tests}build-manifest#0"></a>4.1&nbsp;sct:build-manifest<div style="float:right"><a href="#sct:build-manifest">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}build-manifest#0">sct:build-manifest#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Summary</dt><dd>manifest created before the simplify transform should contain @src paths to 
+the input and @xml:base</dd><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:build-manifest</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 3 functions from 3 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/unit}assert#1</span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}build-manifest#1" title="lib/style-check.xqm">sc:build-manifest#1</a></span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}ends-with#4</span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:build-manifest()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX)
+  
+  return
+  (unit:assert(
+    $manifest/file/@xml:base =&gt; ends-with('/test/proper/')
+  ),
+  unit:assert(
+    $manifest/file/@src eq "word/document.xml"
+  ))  
+}</code></pre></details></div><div class="div3"><h3><a id="sct:check"></a><a id="{http://www.andrewsales.com/style-check-tests}check#0"></a>4.2&nbsp;sct:check<div style="float:right"><a href="#sct:check">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}check#0">sct:check#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:check</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 5 functions from 3 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/unit}assert-equals#2</span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}check#2" title="lib/style-check.xqm">sc:check#2</a></span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}count#3</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}parse-xml#3</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}resolve-uri#1</span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:check()
+{
+  let $result := sc:check(resolve-uri("style-error.docx"), map{})/output
+  =&gt; parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error =&gt; count(), 2)
+}</code></pre></details></div><div class="div3"><h3><a id="sct:ensure-contents-fail"></a><a id="{http://www.andrewsales.com/style-check-tests}ensure-contents-fail#0"></a>4.3&nbsp;sct:ensure-contents-fail<div style="float:right"><a href="#sct:ensure-contents-fail">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}ensure-contents-fail#0">sct:ensure-contents-fail#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:ensure-contents-fail</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 1 functions from 1 modules </summary><ul><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}ensure-contents#1" title="lib/style-check.xqm">sc:ensure-contents#1</a></span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">('expected','sc:docx-no-content')</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:ensure-contents-fail()
+{
+  sc:ensure-contents($sct:badDOCX)
+}</code></pre></details></div><div class="div3"><h3><a id="sct:ensure-contents-pass"></a><a id="{http://www.andrewsales.com/style-check-tests}ensure-contents-pass#0"></a>4.4&nbsp;sct:ensure-contents-pass<div style="float:right"><a href="#sct:ensure-contents-pass">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}ensure-contents-pass#0">sct:ensure-contents-pass#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:ensure-contents-pass</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 1 functions from 1 modules </summary><ul><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}ensure-contents#1" title="lib/style-check.xqm">sc:ensure-contents#1</a></span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:ensure-contents-pass()
+{
+  sc:ensure-contents($sct:goodDOCX)
+}</code></pre></details></div><div class="div3"><h3><a id="sct:ensure-contents-src"></a><a id="{http://www.andrewsales.com/style-check-tests}ensure-contents-src#0"></a>4.5&nbsp;sct:ensure-contents-src<div style="float:right"><a href="#sct:ensure-contents-src">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}ensure-contents-src#0">sct:ensure-contents-src#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:ensure-contents-src</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 3 functions from 3 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/unit}assert-equals#2</span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}ensure-contents#1" title="lib/style-check.xqm">sc:ensure-contents#1</a></span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}data#1</span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:ensure-contents-src()
+{
+  let $file := sc:ensure-contents($sct:goodDOCX)
+  
+  return
+  unit:assert-equals(
+     data($file/@src),
+     'word/document.xml'
+  )
+}</code></pre></details></div><div class="div3"><h3><a id="sct:ensure-file-fail"></a><a id="{http://www.andrewsales.com/style-check-tests}ensure-file-fail#0"></a>4.6&nbsp;sct:ensure-file-fail<div style="float:right"><a href="#sct:ensure-file-fail">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}ensure-file-fail#0">sct:ensure-file-fail#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:ensure-file-fail</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 1 functions from 1 modules </summary><ul><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}ensure-file#1" title="lib/style-check.xqm">sc:ensure-file#1</a></span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">('expected','sc:file-not-found')</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:ensure-file-fail()
+{
+  sc:ensure-file('not-my.docx')
+}</code></pre></details></div><div class="div3"><h3><a id="sct:ensure-file-pass"></a><a id="{http://www.andrewsales.com/style-check-tests}ensure-file-pass#0"></a>4.7&nbsp;sct:ensure-file-pass<div style="float:right"><a href="#sct:ensure-file-pass">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}ensure-file-pass#0">sct:ensure-file-pass#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:ensure-file-pass</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 1 functions from 1 modules </summary><ul><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}ensure-file#1" title="lib/style-check.xqm">sc:ensure-file#1</a></span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:ensure-file-pass()
+{
+  sc:ensure-file($sct:goodDOCX)
+}</code></pre></details></div><div class="div3"><h3><a id="sct:ensure-format-fail"></a><a id="{http://www.andrewsales.com/style-check-tests}ensure-format-fail#0"></a>4.8&nbsp;sct:ensure-format-fail<div style="float:right"><a href="#sct:ensure-format-fail">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}ensure-format-fail#0">sct:ensure-format-fail#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:ensure-format-fail</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 1 functions from 1 modules </summary><ul><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}ensure-format#1" title="lib/style-check.xqm">sc:ensure-format#1</a></span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">('expected','sc:invalid-format')</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:ensure-format-fail()
+{
+  sc:ensure-format('my.doc')
+}</code></pre></details></div><div class="div3"><h3><a id="sct:ensure-format-pass"></a><a id="{http://www.andrewsales.com/style-check-tests}ensure-format-pass#0"></a>4.9&nbsp;sct:ensure-format-pass<div style="float:right"><a href="#sct:ensure-format-pass">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}ensure-format-pass#0">sct:ensure-format-pass#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:ensure-format-pass</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 2 functions from 2 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/unit}assert-equals#2</span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}ensure-format#1" title="lib/style-check.xqm">sc:ensure-format#1</a></span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:ensure-format-pass()
+{
+  unit:assert-equals(
+    sc:ensure-format('my.docx'),
+    'my.docx'
+  )
+}</code></pre></details></div><div class="div3"><h3><a id="sct:simplify-styles"></a><a id="{http://www.andrewsales.com/style-check-tests}simplify-styles#0"></a>4.10&nbsp;sct:simplify-styles<div style="float:right"><a href="#sct:simplify-styles">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}simplify-styles#0">sct:simplify-styles#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Summary</dt><dd>manifest returned after the successful transform should now also contain</dd><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:simplify-styles</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><p>dest : paths to the output
+N.B. we have to do some fixups on the URIs to make this portable</p><details><summary>Invokes 6 functions from 3 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/unit}assert-equals#2</span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}build-manifest#1" title="lib/style-check.xqm">sc:build-manifest#1</a></span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}simplify-styles#3" title="lib/style-check.xqm">sc:simplify-styles#3</a></span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}data#1</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}replace#6</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}resolve-uri#1</span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:simplify-styles()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX) =&gt; sc:simplify-styles()
+  
+  return
+  (
+    unit:assert-equals(
+      $manifest/file/@dest/data(), 
+      resolve-uri('proper/out/document.xml') =&gt; replace('///', '/')
+    ),
+    unit:assert-equals(
+      $manifest/file/@src/data(), "word/document.xml"
+    ),
+    unit:assert-equals(
+      $manifest/file/@xml:base/data(),
+      resolve-uri('proper/') =&gt; replace('///', '/')
+    )
+  )
+}</code></pre></details></div><div class="div3"><h3><a id="sct:unzip-fail"></a><a id="{http://www.andrewsales.com/style-check-tests}unzip-fail#0"></a>4.11&nbsp;sct:unzip-fail<div style="float:right"><a href="#sct:unzip-fail">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}unzip-fail#0">sct:unzip-fail#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:unzip-fail</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 1 functions from 1 modules </summary><ul><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}unzip#1" title="lib/style-check.xqm">sc:unzip#1</a></span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">('expected','sc:docx-zip')</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:unzip-fail()
+{
+ sc:unzip($sct:badDOCX)
+}</code></pre></details></div><div class="div3"><h3><a id="sct:unzip-pass"></a><a id="{http://www.andrewsales.com/style-check-tests}unzip-pass#0"></a>4.12&nbsp;sct:unzip-pass<div style="float:right"><a href="#sct:unzip-pass">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}unzip-pass#0">sct:unzip-pass#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:unzip-pass</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 1 functions from 1 modules </summary><ul><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}unzip#1" title="lib/style-check.xqm">sc:unzip#1</a></span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:unzip-pass()
+{
+  sc:unzip($sct:goodDOCX)
+}</code></pre></details></div><div class="div3"><h3><a id="sct:validate-errors"></a><a id="{http://www.andrewsales.com/style-check-tests}validate-errors#0"></a>4.13&nbsp;sct:validate-errors<div style="float:right"><a href="#sct:validate-errors">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}validate-errors#0">sct:validate-errors#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:validate-errors</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 5 functions from 3 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/unit}assert-equals#2</span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}validate#2" title="lib/style-check.xqm">sc:validate#2</a></span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}count#3</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}parse-xml#3</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}resolve-uri#1</span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:validate-errors()
+{
+  let $result := sc:validate(&lt;files&gt;&lt;file dest='{resolve-uri("style-error/document.xml")}'&gt;&lt;/file&gt;&lt;/files&gt;, map{})/output =&gt; parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error =&gt; count(), 2)
+}</code></pre></details></div><div class="div3"><h3><a id="sct:validate-multiple"></a><a id="{http://www.andrewsales.com/style-check-tests}validate-multiple#0"></a>4.14&nbsp;sct:validate-multiple<div style="float:right"><a href="#sct:validate-multiple">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}validate-multiple#0">sct:validate-multiple#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:validate-multiple</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 5 functions from 3 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/unit}assert-equals#2</span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}validate#2" title="lib/style-check.xqm">sc:validate#2</a></span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}count#3</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}parse-xml-fragment#3</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}resolve-uri#1</span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:validate-multiple()
+{
+  let $result := sc:validate(
+    &lt;files&gt;
+    &lt;file dest='{resolve-uri("style-error/document.xml")}'&gt;&lt;/file&gt;
+    &lt;file dest='{resolve-uri("no-errors/document.xml")}'&gt;&lt;/file&gt;
+    &lt;/files&gt;, 
+    map{})/output
+    =&gt;parse-xml-fragment()
+    
+  return
+  unit:assert-equals($result/errors =&gt; count(), 2)
+}</code></pre></details></div><div class="div3"><h3><a id="sct:validate-no-errors"></a><a id="{http://www.andrewsales.com/style-check-tests}validate-no-errors#0"></a>4.15&nbsp;sct:validate-no-errors<div style="float:right"><a href="#sct:validate-no-errors">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}validate-no-errors#0">sct:validate-no-errors#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:validate-no-errors</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 4 functions from 3 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/unit}assert-equals#2</span></li><li><span><a href="../../modules/F1/index.html#{http://www.andrewsales.com/style-check}validate#2" title="lib/style-check.xqm">sc:validate#2</a></span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}parse-xml#1</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}resolve-uri#1</span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:validate-no-errors()
+{
+  let $result := sc:validate(&lt;files&gt;&lt;file&gt;{resolve-uri('no-errors/document.xml')}&lt;/file&gt;&lt;/files&gt;, map{})/output
+  
+  return
+  unit:assert-equals(parse-xml($result)/errors/*,())
+}</code></pre></details></div><div class="div3"><h3><a id="sct:validator-jar"></a><a id="{http://www.andrewsales.com/style-check-tests}validator-jar#0"></a>4.16&nbsp;sct:validator-jar<div style="float:right"><a href="#sct:validator-jar">#</a></div></h3><p>Arities: <span style="margin-left:1em"><a href="#{http://www.andrewsales.com/style-check-tests}validator-jar#0">sct:validator-jar#0</a><span class="badge badge-info" title="Other annotations">A</span></span></p><dt class="label">Signature</dt><dd><div class="proto"><code class="function">sct:validator-jar</code>
+		  ( 
+			
+	 )
+			<code class="as">&nbsp;as&nbsp;</code><code class="return-type"><xqdoc:type xmlns:xqdoc="http://www.xqdoc.org/1.0" occurrence="*">item()</xqdoc:type>*</code></div></dd><dt class="label">Return</dt><dd><ul><li><code class="return-type">item() *</code></li></ul></dd><details><summary>Invokes 4 functions from 3 modules </summary><ul><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/proc}execute#2</span></li><li><span class="badge badge-warning" title="Externally defined">{http://basex.org/modules/unit}assert-equals#2</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}resolve-uri#1</span></li><li><span class="badge badge-warning" title="Externally defined">{http://www.w3.org/2005/xpath-functions}substring-after#4</span></li></ul></details><details><summary>Invoked by 0 functions from 0 modules</summary><ul></ul></details><details><summary>Annotations</summary><table class="data"><tbody><tr><td><code class="function">%unit:test</code></td><td><code class="arg">()</code></td></tr></tbody></table></details><details><summary>Source</summary><pre><code class="language-xquery">function sct:validator-jar()
+{
+  unit:assert-equals(
+    proc:execute(
+      'java',
+     ('-jar', resolve-uri("../etc/validator.jar")=&gt;substring-after('file:///'))
+   )/code,
+   &lt;code&gt;0&lt;/code&gt;	(:ran successfully:)
+  )
+}</code></pre></details></div></section><section id="namespaces"><h2>Namespaces</h2><p>The following namespaces are defined:</p><table class="data" style="float:none"><thead><tr><th>Prefix</th><th>Uri</th></tr></thead><tbody><tr><td>sc</td><td><span><a href="../../modules/F1/index.html" title="lib/style-check.xqm">http://www.andrewsales.com/style-check</a></span></td></tr><tr><td>sct</td><td><span><a href="../../modules/F2/index.html" title="test/tests.xqm">http://www.andrewsales.com/style-check-tests</a></span></td></tr><tr><td>unit</td><td><span class="badge badge-warning" title="Externally defined">http://basex.org/modules/unit</span></td></tr></tbody></table></section><div class="div2"><h2><a id="restxq"></a>6 RestXQ</h2><p>None</p></div><section id="source"><h2>Source Code</h2><pre><code class="language-xquery">(:~ Unit tests for the style checking module. :)
+
+module namespace sct = "http://www.andrewsales.com/style-check-tests";
+
+import module namespace sc = "http://www.andrewsales.com/style-check" at "../lib/style-check.xqm";
+
+(:static test cases:)
+declare variable $sct:goodDOCX := resolve-uri("proper.docx", static-base-uri());
+declare variable $sct:badDOCX := resolve-uri("bad.docx", static-base-uri());
+
+declare %unit:test function sct:ensure-file-pass()
+{
+  sc:ensure-file($sct:goodDOCX)
+};
+
+(:file not found:)
+declare %unit:test('expected', 'sc:file-not-found') function sct:ensure-file-fail()
+{
+  sc:ensure-file('not-my.docx')
+};
+
+declare %unit:test function sct:ensure-format-pass()
+{
+  unit:assert-equals(
+    sc:ensure-format('my.docx'),
+    'my.docx'
+  )
+};
+
+(:not a .docx file:)
+declare %unit:test("expected", 'sc:invalid-format') function sct:ensure-format-fail()
+{
+  sc:ensure-format('my.doc')
+};
+
+declare %unit:test function sct:unzip-pass()
+{
+  sc:unzip($sct:goodDOCX)
+};
+
+(:bad zip:)
+declare %unit:test('expected', 'sc:docx-zip') function sct:unzip-fail()
+{
+ sc:unzip($sct:badDOCX)
+};
+
+declare %unit:test function sct:ensure-contents-pass()
+{
+  sc:ensure-contents($sct:goodDOCX)
+};
+
+declare %unit:test function sct:ensure-contents-src()
+{
+  let $file := sc:ensure-contents($sct:goodDOCX)
+  
+  return
+  unit:assert-equals(
+     data($file/@src),
+     'word/document.xml'
+  )
+};
+
+(:expected contents not in zip:)
+declare %unit:test('expected', 'sc:docx-no-content') function sct:ensure-contents-fail()
+{
+  sc:ensure-contents($sct:badDOCX)
+};
+
+(:~ manifest created before the simplify transform should contain @src paths to 
+the input and @xml:base :)
+declare %unit:test function sct:build-manifest()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX)
+  
+  return
+  (unit:assert(
+    $manifest/file/@xml:base =&gt; ends-with('/test/proper/')
+  ),
+  unit:assert(
+    $manifest/file/@src eq "word/document.xml"
+  ))  
+};
+
+(:~ manifest returned after the successful transform should now also contain
+@dest paths to the output
+N.B. we have to do some fixups on the URIs to make this portable :)
+declare %unit:test function sct:simplify-styles()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX) =&gt; sc:simplify-styles()
+  
+  return
+  (
+    unit:assert-equals(
+      $manifest/file/@dest/data(), 
+      resolve-uri('proper/out/document.xml') =&gt; replace('///', '/')
+    ),
+    unit:assert-equals(
+      $manifest/file/@src/data(), "word/document.xml"
+    ),
+    unit:assert-equals(
+      $manifest/file/@xml:base/data(),
+      resolve-uri('proper/') =&gt; replace('///', '/')
+    )
+  )
+};
+
+declare %unit:test function sct:validator-jar()
+{
+  unit:assert-equals(
+    proc:execute(
+      'java',
+     ('-jar', resolve-uri("../etc/validator.jar")=&gt;substring-after('file:///'))
+   )/code,
+   &lt;code&gt;0&lt;/code&gt;	(:ran successfully:)
+  )
+};
+
+declare %unit:test function sct:validate-no-errors()
+{
+  let $result := sc:validate(&lt;files&gt;&lt;file&gt;{resolve-uri('no-errors/document.xml')}&lt;/file&gt;&lt;/files&gt;, map{})/output
+  
+  return
+  unit:assert-equals(parse-xml($result)/errors/*,())
+};
+
+declare %unit:test function sct:validate-errors()
+{
+  let $result := sc:validate(&lt;files&gt;&lt;file dest='{resolve-uri("style-error/document.xml")}'&gt;&lt;/file&gt;&lt;/files&gt;, map{})/output =&gt; parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error =&gt; count(), 2)
+};
+
+declare %unit:test function sct:validate-multiple()
+{
+  let $result := sc:validate(
+    &lt;files&gt;
+    &lt;file dest='{resolve-uri("style-error/document.xml")}'&gt;&lt;/file&gt;
+    &lt;file dest='{resolve-uri("no-errors/document.xml")}'&gt;&lt;/file&gt;
+    &lt;/files&gt;, 
+    map{})/output
+    =&gt;parse-xml-fragment()
+    
+  return
+  unit:assert-equals($result/errors =&gt; count(), 2)
+};
+
+declare %unit:test function sct:check()
+{
+  let $result := sc:check(resolve-uri("style-error.docx"), map{})/output
+  =&gt; parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error =&gt; count(), 2)
+};</code></pre></section></div></div><div class="footer"><p style="text-align:right">Generated by 
+            <a href="https://github.com/Quodatum/xqdoca" target="_blank">xqDocA</a>
+            &nbsp; 0.2 on <span title="2021-08-20T13:27:42.243+01:00">Friday, August 20th 2021</span></p></div><script src="../../resources/prism/prism.js" type="text/javascript"></script><script src="../../resources/xqdoca.js" type="text/javascript"></script></body></html>

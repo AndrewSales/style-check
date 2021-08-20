@@ -1,0 +1,39 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><meta http-equiv="Generator" content="xqdoca - https://github.com/quodatum/xqdoca"><title>style-check - xqDocA
+        </title><link rel="shortcut icon" type="image/x-icon" href="resources/xqdoc.png"><link rel="stylesheet" type="text/css" href="resources/prism/prism.css"><link rel="stylesheet" type="text/css" href="resources/page.css"><link rel="stylesheet" type="text/css" href="resources/query.css"><link rel="stylesheet" type="text/css" href="resources/base.css"></head><body class="home" id="top"><div id="main"><div><h1>
+                 Project <span class="badge badge-info">style-check</span>
+                  &nbsp;XQuery source documentation 
+              </h1><div style="text-align:right"><small><span title="2021-08-20T13:27:42.243+01:00">Friday, August 20th 2021</span></small></div><nav id="toc"><h2><a id="contents"></a>style-check</h2><ol class="toc"><li><a href="#summary"><span class="secno">1</span><span class="content">Summary</span></a></li><li><a href="#related"><span class="secno">2</span><span class="content">Related documents</span></a></li><li><a href="#ns"><span class="secno">3</span><span class="content">Modules</span></a><ol><li><a href="#ns_main"><span class="secno">3.1</span><span class="content">Main modules</span></a></li><li><a href="#ns_library"><span class="secno">3.2</span><span class="content">Library modules</span></a></li></ol></li><li><a href="#file"><span class="secno">4</span><span class="content">Files</span></a></li><li><a href="#annotation"><span class="secno">5</span><span class="content">Annotations</span></a><ol><li><a href="#http://basex.org/modules/unit"><span class="secno">5.1</span><span class="content">http://basex.org/modules/unit</span></a></li><li><a href="#http://www.w3.org/2012/xquery"><span class="secno">5.2</span><span class="content">http://www.w3.org/2012/xquery</span></a></li></ol></li></ol></nav><section id="summary"><h2>Summary</h2><p>The project 
+    <span class="badge badge-info">style-check</span> contains
+  
+    3 modules and references
+ 2 annotation namespaces.
+    </p><p>This document was built from source folder <kbd>c:/users/asales/git/style-check/</kbd>.</p></section><section id="related"><h2>Related documents</h2><table class="data"><thead><th>View</th><th>Description</th><th>Format</th></thead><tbody><tr><td><a href="restxq.html">restxq</a></td><td>Summary of REST interface</td><td>html5</td></tr><tr><td><a href="imports.html">imports</a></td><td>Summary of import usage</td><td>html5</td></tr><tr><td><a href="annotations.html">annotations</a></td><td>Summary of Annotation use</td><td>html5</td></tr><tr><td><a href="swagger.json">swagger1</a></td><td>Swagger file (JSON format) from restxq annotations.</td><td>json</td></tr><tr><td><a href="xqdoca.xml">meta</a></td><td>xqDocA run configuration report (XML)</td><td>xml</td></tr></tbody></table></section><section id="ns"><h2>Modules</h2><section id="ns_main"><h3>Main modules</h3><div><table class="data"><thead><tr><th>Type</th><th>Uri</th><th></th><th>Annotations</th><th>Functions</th></tr></thead><tbody><tr><td title="http://www.w3.org/2005/xpath-functions">main</td><td><span><a href="modules/F3/index.html" title="">test.xq</a></span><div></div></td><td></td><td></td><td style="text-align: right">1</td></tr></tbody></table></div></section><section id="ns_library"><h3>Library modules</h3><div><table class="data"><thead><tr><th>Type</th><th>Uri</th><th></th><th>Annotations</th><th>Functions</th></tr></thead><tbody><tr><td title="http://www.w3.org/2005/xpath-functions">library</td><td><span><a href="modules/F1/index.html" title="Module of BaseX XQuery functions to provide style-checking functionality&#xA;for Microsoft Word documents.&#xA;&#xA;Tested under BaseX 9.5.&#xA;The target Word XML format is that in the namespace:&#xA;&#x9;http://schemas.openxmlformats.org/wordprocessingml/2006/main.&#xA;&#xA;The main entry point is sc:check(), which takes one or more paths to *.docx&#xA;documents. Each of these is unzipped, simplified to consist of elements&#xA;describing paragraph and inline styles, then validated against the style&#xA;DTD - see path given in $sc:STYLE_SCHEMA.&#xA;&#xA;APPROACH&#xA;does path exist?&#xA;is it a DOCX?&#xA;is it a valid zip?&#xA;unzip it&#xA;is it a valid DOCX (does it contain word/document.xml)?&#xA;transform it to simplified styles&#xA;validate the result with custom validator&#xA;return the resulting report&#xA;&#xA;&#xA;TODO: use $sc:UNZIP_DIR">http://www.andrewsales.com/style-check</a></span><div>Module of BaseX XQuery functions to provide style-checking functionality
+for Microsoft Word documents.
+
+Tested under BaseX 9.5.
+The target Word XML format is that in the namespace:
+	http://schemas.openxmlformats.org/wordprocessingml/2006/main.
+
+The main entry point is sc:check(), which takes one or more paths to *.docx
+documents. Each of these is unzipped, simplified to consist of elements
+describing paragraph and inline styles, then validated against the style
+DTD - see path given in $sc:STYLE_SCHEMA.
+
+APPROACH
+does path exist?
+is it a DOCX?
+is it a valid zip?
+unzip it
+is it a valid DOCX (does it contain word/document.xml)?
+transform it to simplified styles
+validate the result with custom validator
+return the resulting report
+
+
+TODO: use $sc:UNZIP_DIR</div></td><td><span class="badge badge-dark" title="Private">P</span></td><td><span class="badge badge-info" title="http://www.w3.org/2012/xquery">http://www.w3.org/2012/xquery</span></td><td style="text-align: right">10</td></tr><tr><td title="http://www.w3.org/2005/xpath-functions">library</td><td><span><a href="modules/F2/index.html" title="Unit tests for the style checking module.">http://www.andrewsales.com/style-check-tests</a></span><div>Unit tests for the style checking module.</div></td><td><span class="badge badge-info" title="Other annotations">A</span></td><td><span class="badge badge-info" title="http://basex.org/modules/unit">http://basex.org/modules/unit</span></td><td style="text-align: right">16</td></tr></tbody></table></div></section></section><section id="file"><h2>Files</h2><p>3 files.</p><ul class="tree"><li><span class="caret">lib/
+            </span><ul class="nested"><li><a href="modules/F1/index.html">style-check.xqm</a></li></ul></li><li><span class="caret">test/
+            </span><ul class="nested"><li><a href="modules/F2/index.html">tests.xqm</a></li></ul></li><li><span class="caret">utils/
+            </span><ul class="nested"><li><a href="modules/F3/index.html">test.xq</a></li></ul></li></ul></section><section id="annotation"><h2>Annotations</h2><p>Annotations are defined in 2 namespaces. A total of 17 annotations are defined.
+              </p><section id="http://basex.org/modules/unit"><h3>http://basex.org/modules/unit</h3><div><span style="margin-right:1em;"><a href="annotations.html#{http://basex.org/modules/unit}test">test</a><span class="badge badge-info">16</span></span></div></section><section id="http://www.w3.org/2012/xquery"><h3>http://www.w3.org/2012/xquery</h3><div><span style="margin-right:1em;"><a href="annotations.html#{http://www.w3.org/2012/xquery}private">private</a><span class="badge badge-info">1</span></span></div></section></section></div></div><div class="footer"><p style="text-align:right">Generated by 
+            <a href="https://github.com/Quodatum/xqdoca" target="_blank">xqDocA</a>
+            &nbsp; 0.2 on <span title="2021-08-20T13:27:42.243+01:00">Friday, August 20th 2021</span></p></div><script src="resources/prism/prism.js" type="text/javascript"></script><script src="resources/xqdoca.js" type="text/javascript"></script></body></html>

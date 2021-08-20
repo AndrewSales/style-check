@@ -1,0 +1,211 @@
+<XQuery>(:~ 
+ : &lt;p&gt;Module of BaseX XQuery functions to provide style-checking functionality
+ : for Microsoft Word documents.&lt;/p&gt;
+ : 
+ : &lt;p&gt;Tested under BaseX 9.5.&lt;/p&gt;
+ : The target Word XML format is that in the namespace:
+ : 	&lt;code&gt;http://schemas.openxmlformats.org/wordprocessingml/2006/main&lt;/code&gt;.
+ :
+ : &lt;p&gt;The main entry point is sc:check(), which takes one or more paths to *.docx
+ : documents. Each of these is unzipped, simplified to consist of elements
+ : describing paragraph and inline styles, then validated against the style
+ : DTD - see path given in $sc:STYLE_SCHEMA.&lt;/p&gt;
+ :
+ : &lt;h2&gt;APPROACH&lt;/h2&gt;
+ : &lt;ol&gt;&lt;li&gt;does path exist?&lt;/li&gt;
+ : &lt;li&gt;is it a DOCX?&lt;/li&gt;
+ : &lt;li&gt;is it a valid zip?&lt;/li&gt;
+ : &lt;li&gt;unzip it&lt;/li&gt;
+ : &lt;li&gt;is it a valid DOCX (does it contain &lt;code&gt;word/document.xml&lt;/code&gt;)?&lt;/li&gt;
+ : &lt;li&gt;transform it to simplified styles&lt;/li&gt;
+ : &lt;li&gt;validate the result with custom validator&lt;/li&gt;
+ : &lt;li&gt;return the resulting report&lt;/li&gt;
+ : &lt;/ol&gt;
+ :
+ : &lt;p&gt;TODO: use &lt;code&gt;$sc:UNZIP_DIR&lt;/code&gt;&lt;/p&gt;
+ :)
+
+<LibraryModule><ModuleDecl><TOKEN>module</TOKEN> <TOKEN>namespace</TOKEN> <NCName>sc</NCName> <TOKEN>=</TOKEN> <StringLiteral>"http://www.andrewsales.com/style-check"</StringLiteral><TOKEN>;</TOKEN></ModuleDecl>
+
+(:~ where the contents of the DOCX will be extracted to (not currently used) :)
+<Prolog><AnnotatedDecl><TOKEN>declare</TOKEN> <VarDecl><TOKEN>variable</TOKEN> <TOKEN>$</TOKEN><QName>sc:UNZIP_DIR</QName> <TOKEN>external</TOKEN> <TOKEN>:=</TOKEN> <StringLiteral>'.'</StringLiteral></VarDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+(:~ the zip entries to be extracted from DOCX :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <VarDecl><TOKEN>variable</TOKEN> <TOKEN>$</TOKEN><QName>sc:DOCX_CONTENT</QName> <TypeDeclaration><TOKEN>as</TOKEN> <SequenceType><ElementTest><TOKEN>element</TOKEN><TOKEN>(</TOKEN><QName>archive:entry</QName><TOKEN>)</TOKEN></ElementTest><TOKEN>+</TOKEN></SequenceType></TypeDeclaration> <TOKEN>:=</TOKEN> 
+  <DirElemConstructor><TOKEN>&lt;</TOKEN><QName>archive:entry</QName><DirAttributeList/><TOKEN>&gt;</TOKEN><ElementContentChar>w</ElementContentChar><ElementContentChar>o</ElementContentChar><ElementContentChar>r</ElementContentChar><ElementContentChar>d</ElementContentChar><ElementContentChar>/</ElementContentChar><ElementContentChar>d</ElementContentChar><ElementContentChar>o</ElementContentChar><ElementContentChar>c</ElementContentChar><ElementContentChar>u</ElementContentChar><ElementContentChar>m</ElementContentChar><ElementContentChar>e</ElementContentChar><ElementContentChar>n</ElementContentChar><ElementContentChar>t</ElementContentChar><ElementContentChar>.</ElementContentChar><ElementContentChar>x</ElementContentChar><ElementContentChar>m</ElementContentChar><ElementContentChar>l</ElementContentChar><TOKEN>&lt;/</TOKEN><QName>archive:entry</QName><TOKEN>&gt;</TOKEN></DirElemConstructor></VarDecl></AnnotatedDecl><TOKEN>;</TOKEN>	(:expected zip entries:)
+(:~ location of the style schema applied during validation :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <VarDecl><TOKEN>variable</TOKEN> <TOKEN>$</TOKEN><QName>sc:STYLE_SCHEMA</QName> <TypeDeclaration><TOKEN>as</TOKEN> <QName>xs:anyURI</QName></TypeDeclaration> <TOKEN>external</TOKEN> <TOKEN>:=</TOKEN> 
+  <FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'../dtd/style-schema.dtd'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall></VarDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+(:~ debugging flag :)  
+<AnnotatedDecl><TOKEN>declare</TOKEN> <VarDecl><TOKEN>variable</TOKEN> <TOKEN>$</TOKEN><QName>sc:OPT_DEBUG</QName> <TypeDeclaration><TOKEN>as</TOKEN> <QName>xs:string</QName></TypeDeclaration> <TOKEN>:=</TOKEN> <StringLiteral>'debug'</StringLiteral></VarDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+(:~ string of the halt-on-invalid validation option :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <VarDecl><TOKEN>variable</TOKEN> <TOKEN>$</TOKEN><QName>sc:HALT_ON_INVALID</QName> <TypeDeclaration><TOKEN>as</TOKEN> <QName>xs:string</QName></TypeDeclaration> <TOKEN>:=</TOKEN> <StringLiteral>'halt-on-invalid'</StringLiteral></VarDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ 
+ : Process one or more word-processing documents.
+ : Currently only DOCX format is supported.
+ : Options are: 
+ : &lt;ul&gt;&lt;li&gt;debug (Boolean): whether to emit debugging messages via trace()&lt;/li&gt;
+ : &lt;li&gt;halt-on-invalid (Boolean): whether to halt processing on the first invalid 
+ : document returned by &lt;code&gt;sc:validate()&lt;/code&gt;&lt;/li&gt;&lt;/ul&gt;
+ :
+ : @param docs the absolute URI(s) of the document(s) to process
+ : @param options map of options
+ : @return manifest of file paths for further processing
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:check</QName><TOKEN>(</TOKEN>
+  <ParamList><Param><TOKEN>$</TOKEN><QName>docs</QName> <TypeDeclaration><TOKEN>as</TOKEN> <SequenceType><QName>xs:string</QName><TOKEN>+</TOKEN></SequenceType></TypeDeclaration></Param><TOKEN>,</TOKEN>
+  <Param><TOKEN>$</TOKEN><QName>options</QName> <TypeDeclaration><TOKEN>as</TOKEN> <MapType><TOKEN>map</TOKEN><TOKEN>(</TOKEN><TOKEN>*</TOKEN><TOKEN>)</TOKEN></MapType></TypeDeclaration></Param></ParamList>
+<TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>_</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>sc:debug</QName><ArgumentList><TOKEN>(</TOKEN><StringConcatExpr><StringLiteral>'check(): '</StringLiteral> <TOKEN>||</TOKEN> <FunctionCall><QName>string-join</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>docs</QName></VarRef><TOKEN>,</TOKEN> <StringLiteral>' '</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall></StringConcatExpr><TOKEN>,</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>options</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall></LetBinding></LetClause>
+  <LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>manifest</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>sc:build-manifest</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>docs</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall></LetBinding></LetClause>
+  <LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>_</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>sc:debug</QName><ArgumentList><TOKEN>(</TOKEN><StringConcatExpr><StringLiteral>'manifest='</StringLiteral> <TOKEN>||</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef></StringConcatExpr><TOKEN>,</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>options</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall></LetBinding></LetClause>
+  <ReturnClause><TOKEN>return</TOKEN> <ArrowExpr><FunctionCall><QName>sc:simplify-styles</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall> <TOKEN>=&gt;</TOKEN> <QName>sc:validate</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>options</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></ArrowExpr></ReturnClause></FLWORExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ 
+ : Process one or more word-processing documents.
+ : Currently only DOCX format is supported.
+ : If the option &lt;code&gt;halt-on-invalid&lt;/code&gt; is set to &lt;code&gt;true()&lt;/code&gt;, 
+ : processing halts on the first invalid file.
+ : @param manifest of files to be validated
+ : @param options map of options
+ : @return one error report per file validated
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:validate</QName><TOKEN>(</TOKEN>
+  <ParamList><Param><TOKEN>$</TOKEN><QName>manifest</QName> <TypeDeclaration><TOKEN>as</TOKEN> <ElementTest><TOKEN>element</TOKEN><TOKEN>(</TOKEN><QName>files</QName><TOKEN>)</TOKEN></ElementTest></TypeDeclaration></Param><TOKEN>,</TOKEN>
+  <Param><TOKEN>$</TOKEN><QName>options</QName> <TypeDeclaration><TOKEN>as</TOKEN> <MapType><TOKEN>map</TOKEN><TOKEN>(</TOKEN><TOKEN>*</TOKEN><TOKEN>)</TOKEN></MapType></TypeDeclaration></Param></ParamList>
+<TOKEN>)</TOKEN>
+<TOKEN>as</TOKEN> <ElementTest><TOKEN>element</TOKEN><TOKEN>(</TOKEN><QName>result</QName><TOKEN>)</TOKEN></ElementTest>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>_</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>sc:debug</QName><ArgumentList><TOKEN>(</TOKEN><StringConcatExpr><StringLiteral>'validate paths='</StringLiteral><TOKEN>||</TOKEN>
+    <FunctionCall><QName>string-join</QName><ArgumentList><TOKEN>(</TOKEN><RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>file</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><AbbrevForwardStep><TOKEN>@</TOKEN><QName>dest</QName></AbbrevForwardStep><PredicateList/></AxisStep></RelativePathExpr><TOKEN>,</TOKEN> <StringLiteral>' '</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall></StringConcatExpr><TOKEN>,</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>options</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall></LetBinding></LetClause>
+  <ReturnClause><TOKEN>return</TOKEN>
+  <FunctionCall><QName>proc:execute</QName><ArgumentList><TOKEN>(</TOKEN>
+    <StringLiteral>'java'</StringLiteral><TOKEN>,</TOKEN>
+    <ParenthesizedExpr><TOKEN>(</TOKEN>
+      <Expr><StringLiteral>'-jar'</StringLiteral><TOKEN>,</TOKEN> <ArrowExpr><FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'../etc/validator.jar'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>=&gt;</TOKEN><QName>substring-after</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'file:///'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></ArrowExpr><TOKEN>,</TOKEN>
+      <RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>file</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><AbbrevForwardStep><TOKEN>@</TOKEN><QName>dest</QName></AbbrevForwardStep> <PredicateList/></AxisStep><TOKEN>!</TOKEN> <FunctionCall><QName>data</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></FunctionCall></RelativePathExpr><TOKEN>,</TOKEN>
+      <IfExpr><TOKEN>if</TOKEN><TOKEN>(</TOKEN><PostfixExpr><VarRef><TOKEN>$</TOKEN><QName>options</QName></VarRef> <Lookup><TOKEN>?</TOKEN> <ParenthesizedExpr><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sc:HALT_ON_INVALID</QName></VarRef><TOKEN>)</TOKEN></ParenthesizedExpr></Lookup></PostfixExpr><TOKEN>)</TOKEN> <TOKEN>then</TOKEN> <StringConcatExpr><StringLiteral>'--'</StringLiteral><TOKEN>||</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sc:HALT_ON_INVALID</QName></VarRef></StringConcatExpr> <TOKEN>else</TOKEN> <ParenthesizedExpr><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ParenthesizedExpr></IfExpr></Expr>
+    <TOKEN>)</TOKEN></ParenthesizedExpr>
+  <TOKEN>)</TOKEN></ArgumentList></FunctionCall></ReturnClause></FLWORExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ Build the manifest for the Word XML files extracted. 
+ : @param docs the absolute URI(s) of the document(s) to process
+ : @return the manifest, each document in the batch represented by &lt;code&gt;&amp;lt;file src='...'/&gt;&lt;/code&gt;
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:build-manifest</QName><TOKEN>(</TOKEN><Param><TOKEN>$</TOKEN><QName>docs</QName> <TypeDeclaration><TOKEN>as</TOKEN> <SequenceType><QName>xs:string</QName><TOKEN>+</TOKEN></SequenceType></TypeDeclaration></Param><TOKEN>)</TOKEN>
+<TOKEN>as</TOKEN> <ElementTest><TOKEN>element</TOKEN><TOKEN>(</TOKEN><QName>files</QName><TOKEN>)</TOKEN></ElementTest>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <DirElemConstructor><TOKEN>&lt;</TOKEN><QName>files</QName><DirAttributeList/><TOKEN>&gt;</TOKEN><EnclosedExpr><TOKEN>{</TOKEN>
+    <RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>docs</QName></VarRef> <TOKEN>!</TOKEN>
+    <ParenthesizedExpr><TOKEN>(</TOKEN>
+      <Expr><ArrowExpr><FunctionCall><QName>sc:ensure-file</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>.</TOKEN><TOKEN>)</TOKEN></ArgumentList></FunctionCall> <TOKEN>=&gt;</TOKEN> <QName>sc:ensure-format</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList> <TOKEN>=&gt;</TOKEN> <QName>sc:unzip</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></ArrowExpr><TOKEN>,</TOKEN>
+      <FunctionCall><QName>sc:ensure-contents</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>.</TOKEN><TOKEN>)</TOKEN></ArgumentList></FunctionCall></Expr>
+    <TOKEN>)</TOKEN></ParenthesizedExpr></RelativePathExpr>
+  <TOKEN>}</TOKEN></EnclosedExpr><TOKEN>&lt;/</TOKEN><QName>files</QName><TOKEN>&gt;</TOKEN></DirElemConstructor>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ Batch-transform the manifest of files passed in.
+ : @param manifest the manifest of files
+ : @return the manifest, each document in the batch represented by &lt;code&gt;&amp;lt;file src='...' dest='...'/&gt;&lt;/code&gt;
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:simplify-styles</QName><TOKEN>(</TOKEN><Param><TOKEN>$</TOKEN><QName>manifest</QName> <TypeDeclaration><TOKEN>as</TOKEN> <ElementTest><TOKEN>element</TOKEN><TOKEN>(</TOKEN><QName>files</QName><TOKEN>)</TOKEN></ElementTest></TypeDeclaration></Param><TOKEN>)</TOKEN>
+<TOKEN>as</TOKEN> <ElementTest><TOKEN>element</TOKEN><TOKEN>(</TOKEN><QName>files</QName><TOKEN>)</TOKEN></ElementTest>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <RelativePathExpr><FunctionCall><QName>xslt:transform</QName><ArgumentList><TOKEN>(</TOKEN>
+    <VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef><TOKEN>,</TOKEN> 
+    <FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'../xsl/batch-transform.xsl'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN>	(:TODO: compile this to SEF too?:)
+    <MapConstructor><TOKEN>map</TOKEN><TOKEN>{</TOKEN><MapConstructorEntry><StringLiteral>'dtd-loc'</StringLiteral><TOKEN>:</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sc:STYLE_SCHEMA</QName></VarRef></MapConstructorEntry><TOKEN>}</TOKEN></MapConstructor>
+  <TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>/</TOKEN><AxisStep><QName>files</QName>
+<PredicateList/></AxisStep></RelativePathExpr><TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ Ensure the file to be processed exists.
+ : @param path the file path
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:ensure-file</QName><TOKEN>(</TOKEN><Param><TOKEN>$</TOKEN><QName>path</QName> <TypeDeclaration><TOKEN>as</TOKEN> <QName>xs:string</QName></TypeDeclaration></Param><TOKEN>)</TOKEN>
+<TOKEN>as</TOKEN> <SequenceType><QName>xs:string</QName><TOKEN>?</TOKEN></SequenceType>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <IfExpr><TOKEN>if</TOKEN><TOKEN>(</TOKEN><FunctionCall><QName>file:exists</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>path</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>)</TOKEN>
+  <TOKEN>then</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>path</QName></VarRef>
+  <TOKEN>else</TOKEN> <FunctionCall><QName>error</QName><ArgumentList><TOKEN>(</TOKEN><FunctionCall><QName>xs:QName</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'sc:file-not-found'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN> <StringConcatExpr><StringLiteral>'cannot find file: '</StringLiteral><TOKEN>||</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>path</QName></VarRef></StringConcatExpr><TOKEN>)</TOKEN></ArgumentList></FunctionCall></IfExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ Ensure the file to be processed is in the correct format, by examining its
+ : extension.
+ : @param path the file path
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:ensure-format</QName><TOKEN>(</TOKEN><Param><TOKEN>$</TOKEN><QName>path</QName> <TypeDeclaration><TOKEN>as</TOKEN> <QName>xs:string</QName></TypeDeclaration></Param><TOKEN>)</TOKEN>
+<TOKEN>as</TOKEN> <SequenceType><QName>xs:string</QName><TOKEN>?</TOKEN></SequenceType>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <IfExpr><TOKEN>if</TOKEN><TOKEN>(</TOKEN><FunctionCall><QName>ends-with</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>path</QName></VarRef><TOKEN>,</TOKEN> <StringLiteral>'.docx'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>)</TOKEN>
+  <TOKEN>then</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>path</QName></VarRef>
+  <TOKEN>else</TOKEN> <FunctionCall><QName>error</QName><ArgumentList><TOKEN>(</TOKEN><FunctionCall><QName>xs:QName</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'sc:invalid-format'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN> <StringConcatExpr><StringLiteral>'invalid format for file: '</StringLiteral><TOKEN>||</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>path</QName></VarRef></StringConcatExpr><TOKEN>)</TOKEN></ArgumentList></FunctionCall></IfExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ 
+ : Extract the contents of an archive representing a single word-processing
+ : document.
+ : In this implementation, only the document &lt;code&gt;word/document.xml&lt;/code&gt; will be extracted,
+ : to a directory named after the archive filename (minus extension).
+ : @param zip the word-processing document
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:unzip</QName><TOKEN>(</TOKEN><Param><TOKEN>$</TOKEN><QName>zip</QName> <TypeDeclaration><TOKEN>as</TOKEN> <QName>xs:string</QName></TypeDeclaration></Param><TOKEN>)</TOKEN>
+<TOKEN>as</TOKEN> <SequenceType><TOKEN>empty-sequence</TOKEN><TOKEN>(</TOKEN><TOKEN>)</TOKEN></SequenceType>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <TryCatchExpr><TryClause><TOKEN>try</TOKEN><EnclosedExpr><TOKEN>{</TOKEN>
+    <FunctionCall><QName>archive:extract-to</QName><ArgumentList><TOKEN>(</TOKEN>
+      <FunctionCall><QName>sc:unzip-path</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>zip</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN> 
+      <FunctionCall><QName>file:read-binary</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>zip</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN> 
+      <VarRef><TOKEN>$</TOKEN><QName>sc:DOCX_CONTENT</QName></VarRef>
+    <TOKEN>)</TOKEN></ArgumentList></FunctionCall>    
+  <TOKEN>}</TOKEN></EnclosedExpr></TryClause>
+  <CatchClause><TOKEN>catch</TOKEN> <Wildcard>*</Wildcard> <EnclosedExpr><TOKEN>{</TOKEN>
+    <FunctionCall><QName>error</QName><ArgumentList><TOKEN>(</TOKEN><FunctionCall><QName>xs:QName</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'sc:docx-zip'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN> <StringConcatExpr><StringLiteral>'error unzipping '</StringLiteral><TOKEN>||</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>zip</QName></VarRef> <TOKEN>||</TOKEN> <StringLiteral>' :'</StringLiteral> <TOKEN>||</TOKEN> 
+      <VarRef><TOKEN>$</TOKEN><QName>err:description</QName></VarRef></StringConcatExpr><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+  <TOKEN>}</TOKEN></EnclosedExpr></CatchClause></TryCatchExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ 
+ : Check that all expected content is present in the DOCX archive.
+ : @param docx the absolute path to the DOCX archive
+ : @return the absolute path(s) to the unzipped content
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:ensure-contents</QName><TOKEN>(</TOKEN><Param><TOKEN>$</TOKEN><QName>docx</QName> <TypeDeclaration><TOKEN>as</TOKEN> <QName>xs:string</QName></TypeDeclaration></Param><TOKEN>)</TOKEN>
+<TOKEN>as</TOKEN> <SequenceType><ElementTest><TOKEN>element</TOKEN><TOKEN>(</TOKEN><QName>file</QName><TOKEN>)</TOKEN></ElementTest><TOKEN>+</TOKEN></SequenceType>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><ForClause><TOKEN>for</TOKEN> <ForBinding><TOKEN>$</TOKEN><QName>x</QName> <TOKEN>in</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>sc:DOCX_CONTENT</QName></VarRef></ForBinding></ForClause>
+  <LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>unzip-path</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>sc:unzip-path</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>docx</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall></LetBinding></LetClause>
+  <LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>path</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>x</QName></VarRef><TOKEN>,</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>unzip-path</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall></LetBinding></LetClause>
+  <ReturnClause><TOKEN>return</TOKEN>
+    <IfExpr><TOKEN>if</TOKEN><TOKEN>(</TOKEN><FunctionCall><QName>file:exists</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>path</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>)</TOKEN>
+    <TOKEN>then</TOKEN> <DirElemConstructor><TOKEN>&lt;</TOKEN><QName>file</QName><DirAttributeList><S> </S><QName>xml:base</QName><TOKEN>=</TOKEN><DirAttributeValue><TOKEN>'</TOKEN><AposAttrContentChar>f</AposAttrContentChar><AposAttrContentChar>i</AposAttrContentChar><AposAttrContentChar>l</AposAttrContentChar><AposAttrContentChar>e</AposAttrContentChar><AposAttrContentChar>:</AposAttrContentChar><AposAttrContentChar>/</AposAttrContentChar><EnclosedExpr><TOKEN>{</TOKEN><VarRef><TOKEN>$</TOKEN><QName>unzip-path</QName></VarRef><TOKEN>}</TOKEN></EnclosedExpr><TOKEN>'</TOKEN></DirAttributeValue><S> </S><QName>src</QName><TOKEN>=</TOKEN><DirAttributeValue><TOKEN>'</TOKEN><EnclosedExpr><TOKEN>{</TOKEN><VarRef><TOKEN>$</TOKEN><QName>x</QName></VarRef><TOKEN>}</TOKEN></EnclosedExpr><TOKEN>'</TOKEN></DirAttributeValue></DirAttributeList><TOKEN>/&gt;</TOKEN></DirElemConstructor>
+    <TOKEN>else</TOKEN> <FunctionCall><QName>error</QName><ArgumentList><TOKEN>(</TOKEN><FunctionCall><QName>xs:QName</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'sc:docx-no-content'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN> <StringConcatExpr><StringLiteral>'no content found: '</StringLiteral><TOKEN>||</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>path</QName></VarRef> <TOKEN>||</TOKEN>
+  <StringLiteral>'; expected: '</StringLiteral> <TOKEN>||</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>x</QName></VarRef></StringConcatExpr><TOKEN>)</TOKEN></ArgumentList></FunctionCall></IfExpr></ReturnClause></FLWORExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ 
+ : Return the directory path where the DOCX contents are to be extracted.
+ : This implementation uses the file name, minus extension.
+ : @param docx absolute path to the DOCX file
+ : @return path to the extraction directory
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:unzip-path</QName><TOKEN>(</TOKEN><Param><TOKEN>$</TOKEN><QName>docx</QName> <TypeDeclaration><TOKEN>as</TOKEN> <QName>xs:string</QName></TypeDeclaration></Param><TOKEN>)</TOKEN>
+<TOKEN>as</TOKEN> <QName>xs:string</QName>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <ArrowExpr><FunctionCall><QName>file:resolve-path</QName><ArgumentList><TOKEN>(</TOKEN><FunctionCall><QName>substring-before</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>docx</QName></VarRef><TOKEN>,</TOKEN> <StringLiteral>'.docx'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN> <FunctionCall><QName>file:parent</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>docx</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+  <TOKEN>=&gt;</TOKEN> <TOKEN>replace</TOKEN><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'\\'</StringLiteral><TOKEN>,</TOKEN> <StringLiteral>'/'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></ArrowExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ Emit debugging messages to the console.
+ : @param msg the contents of the message to display
+ : @param options map of options (if 'debug' is set to true(), messages are 
+ : emitted)
+ :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>private</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sc:debug</QName><TOKEN>(</TOKEN><ParamList><Param><TOKEN>$</TOKEN><QName>msg</QName> <TypeDeclaration><TOKEN>as</TOKEN> <SequenceType><ItemType><TOKEN>item</TOKEN><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ItemType><TOKEN>*</TOKEN></SequenceType></TypeDeclaration></Param><TOKEN>,</TOKEN> <Param><TOKEN>$</TOKEN><QName>options</QName> <TypeDeclaration><TOKEN>as</TOKEN> <MapType><TOKEN>map</TOKEN><TOKEN>(</TOKEN><TOKEN>*</TOKEN><TOKEN>)</TOKEN></MapType></TypeDeclaration></Param></ParamList><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <IfExpr><TOKEN>if</TOKEN><TOKEN>(</TOKEN><PostfixExpr><VarRef><TOKEN>$</TOKEN><QName>options</QName></VarRef><Lookup><TOKEN>?</TOKEN><ParenthesizedExpr><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sc:OPT_DEBUG</QName></VarRef><TOKEN>)</TOKEN></ParenthesizedExpr></Lookup></PostfixExpr><TOKEN>)</TOKEN>
+  <TOKEN>then</TOKEN> <FunctionCall><QName>trace</QName><ArgumentList><TOKEN>(</TOKEN><StringConcatExpr><StringLiteral>'[DEBUG]:'</StringLiteral> <TOKEN>||</TOKEN> <VarRef><TOKEN>$</TOKEN><QName>msg</QName></VarRef></StringConcatExpr><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+  <TOKEN>else</TOKEN> <ParenthesizedExpr><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ParenthesizedExpr></IfExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN></Prolog></LibraryModule><EOF/></XQuery>

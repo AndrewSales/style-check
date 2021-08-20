@@ -1,0 +1,262 @@
+<xqdoc:xqdoc xmlns:xqdoc="http://www.xqdoc.org/1.0"><xqdoc:control><xqdoc:date>2021-08-20T13:27:42.243+01:00</xqdoc:date><xqdoc:version>1.1</xqdoc:version></xqdoc:control><xqdoc:module type="library"><xqdoc:uri>http://www.andrewsales.com/style-check-tests</xqdoc:uri><xqdoc:name>tests.xqm</xqdoc:name><xqdoc:comment><xqdoc:description>Unit tests for the style checking module.</xqdoc:description><xqdoc:custom tag="__source">test/tests.xqm</xqdoc:custom></xqdoc:comment><xqdoc:body>(:~ Unit tests for the style checking module. :)
+
+module namespace sct = "http://www.andrewsales.com/style-check-tests";
+
+import module namespace sc = "http://www.andrewsales.com/style-check" at "../lib/style-check.xqm";
+
+(:static test cases:)
+declare variable $sct:goodDOCX := resolve-uri("proper.docx", static-base-uri());
+declare variable $sct:badDOCX := resolve-uri("bad.docx", static-base-uri());
+
+declare %unit:test function sct:ensure-file-pass()
+{
+  sc:ensure-file($sct:goodDOCX)
+};
+
+(:file not found:)
+declare %unit:test('expected', 'sc:file-not-found') function sct:ensure-file-fail()
+{
+  sc:ensure-file('not-my.docx')
+};
+
+declare %unit:test function sct:ensure-format-pass()
+{
+  unit:assert-equals(
+    sc:ensure-format('my.docx'),
+    'my.docx'
+  )
+};
+
+(:not a .docx file:)
+declare %unit:test("expected", 'sc:invalid-format') function sct:ensure-format-fail()
+{
+  sc:ensure-format('my.doc')
+};
+
+declare %unit:test function sct:unzip-pass()
+{
+  sc:unzip($sct:goodDOCX)
+};
+
+(:bad zip:)
+declare %unit:test('expected', 'sc:docx-zip') function sct:unzip-fail()
+{
+ sc:unzip($sct:badDOCX)
+};
+
+declare %unit:test function sct:ensure-contents-pass()
+{
+  sc:ensure-contents($sct:goodDOCX)
+};
+
+declare %unit:test function sct:ensure-contents-src()
+{
+  let $file := sc:ensure-contents($sct:goodDOCX)
+  
+  return
+  unit:assert-equals(
+     data($file/@src),
+     'word/document.xml'
+  )
+};
+
+(:expected contents not in zip:)
+declare %unit:test('expected', 'sc:docx-no-content') function sct:ensure-contents-fail()
+{
+  sc:ensure-contents($sct:badDOCX)
+};
+
+(:~ manifest created before the simplify transform should contain @src paths to 
+the input and @xml:base :)
+declare %unit:test function sct:build-manifest()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX)
+  
+  return
+  (unit:assert(
+    $manifest/file/@xml:base =&gt; ends-with('/test/proper/')
+  ),
+  unit:assert(
+    $manifest/file/@src eq "word/document.xml"
+  ))  
+};
+
+(:~ manifest returned after the successful transform should now also contain
+@dest paths to the output
+N.B. we have to do some fixups on the URIs to make this portable :)
+declare %unit:test function sct:simplify-styles()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX) =&gt; sc:simplify-styles()
+  
+  return
+  (
+    unit:assert-equals(
+      $manifest/file/@dest/data(), 
+      resolve-uri('proper/out/document.xml') =&gt; replace('///', '/')
+    ),
+    unit:assert-equals(
+      $manifest/file/@src/data(), "word/document.xml"
+    ),
+    unit:assert-equals(
+      $manifest/file/@xml:base/data(),
+      resolve-uri('proper/') =&gt; replace('///', '/')
+    )
+  )
+};
+
+declare %unit:test function sct:validator-jar()
+{
+  unit:assert-equals(
+    proc:execute(
+      'java',
+     ('-jar', resolve-uri("../etc/validator.jar")=&gt;substring-after('file:///'))
+   )/code,
+   &lt;code&gt;0&lt;/code&gt;	(:ran successfully:)
+  )
+};
+
+declare %unit:test function sct:validate-no-errors()
+{
+  let $result := sc:validate(&lt;files&gt;&lt;file&gt;{resolve-uri('no-errors/document.xml')}&lt;/file&gt;&lt;/files&gt;, map{})/output
+  
+  return
+  unit:assert-equals(parse-xml($result)/errors/*,())
+};
+
+declare %unit:test function sct:validate-errors()
+{
+  let $result := sc:validate(&lt;files&gt;&lt;file dest='{resolve-uri("style-error/document.xml")}'&gt;&lt;/file&gt;&lt;/files&gt;, map{})/output =&gt; parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error =&gt; count(), 2)
+};
+
+declare %unit:test function sct:validate-multiple()
+{
+  let $result := sc:validate(
+    &lt;files&gt;
+    &lt;file dest='{resolve-uri("style-error/document.xml")}'&gt;&lt;/file&gt;
+    &lt;file dest='{resolve-uri("no-errors/document.xml")}'&gt;&lt;/file&gt;
+    &lt;/files&gt;, 
+    map{})/output
+    =&gt;parse-xml-fragment()
+    
+  return
+  unit:assert-equals($result/errors =&gt; count(), 2)
+};
+
+declare %unit:test function sct:check()
+{
+  let $result := sc:check(resolve-uri("style-error.docx"), map{})/output
+  =&gt; parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error =&gt; count(), 2)
+};</xqdoc:body></xqdoc:module><xqdoc:namespaces><xqdoc:namespace prefix="sct" uri="http://www.andrewsales.com/style-check-tests"/><xqdoc:namespace prefix="sc" uri="http://www.andrewsales.com/style-check"/><xqdoc:namespace prefix="unit" uri="http://basex.org/modules/unit"/></xqdoc:namespaces><xqdoc:imports><xqdoc:import type="library"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri></xqdoc:import></xqdoc:imports><xqdoc:variables><xqdoc:variable><xqdoc:name>sct:goodDOCX</xqdoc:name><xqdoc:type occurrence="?">xs:anyURI</xqdoc:type></xqdoc:variable><xqdoc:variable><xqdoc:name>sct:badDOCX</xqdoc:name><xqdoc:type occurrence="?">xs:anyURI</xqdoc:type></xqdoc:variable></xqdoc:variables><xqdoc:functions><xqdoc:function arity="0"><xqdoc:name>sct:ensure-file-pass</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:ensure-file-pass() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-file</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check-tests</xqdoc:uri><xqdoc:name>goodDOCX</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:ensure-file-pass()
+{
+  sc:ensure-file($sct:goodDOCX)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:ensure-file-fail</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"><xqdoc:literal type="xs:string">expected</xqdoc:literal><xqdoc:literal type="xs:string">sc:file-not-found</xqdoc:literal></xqdoc:annotation></xqdoc:annotations><xqdoc:signature>declare %unit:test("expected", "sc:file-not-found") function sct:ensure-file-fail() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-file</xqdoc:name></xqdoc:invoked><xqdoc:body>function sct:ensure-file-fail()
+{
+  sc:ensure-file('not-my.docx')
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:ensure-format-pass</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:ensure-format-pass() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-format</xqdoc:name></xqdoc:invoked><xqdoc:body>function sct:ensure-format-pass()
+{
+  unit:assert-equals(
+    sc:ensure-format('my.docx'),
+    'my.docx'
+  )
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:ensure-format-fail</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"><xqdoc:literal type="xs:string">expected</xqdoc:literal><xqdoc:literal type="xs:string">sc:invalid-format</xqdoc:literal></xqdoc:annotation></xqdoc:annotations><xqdoc:signature>declare %unit:test("expected", "sc:invalid-format") function sct:ensure-format-fail() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-format</xqdoc:name></xqdoc:invoked><xqdoc:body>function sct:ensure-format-fail()
+{
+  sc:ensure-format('my.doc')
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:unzip-pass</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:unzip-pass() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>unzip</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check-tests</xqdoc:uri><xqdoc:name>goodDOCX</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:unzip-pass()
+{
+  sc:unzip($sct:goodDOCX)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:unzip-fail</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"><xqdoc:literal type="xs:string">expected</xqdoc:literal><xqdoc:literal type="xs:string">sc:docx-zip</xqdoc:literal></xqdoc:annotation></xqdoc:annotations><xqdoc:signature>declare %unit:test("expected", "sc:docx-zip") function sct:unzip-fail() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>unzip</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check-tests</xqdoc:uri><xqdoc:name>badDOCX</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:unzip-fail()
+{
+ sc:unzip($sct:badDOCX)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:ensure-contents-pass</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:ensure-contents-pass() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-contents</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check-tests</xqdoc:uri><xqdoc:name>goodDOCX</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:ensure-contents-pass()
+{
+  sc:ensure-contents($sct:goodDOCX)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:ensure-contents-src</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:ensure-contents-src() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-contents</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>data</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check-tests</xqdoc:uri><xqdoc:name>goodDOCX</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>file</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:ensure-contents-src()
+{
+  let $file := sc:ensure-contents($sct:goodDOCX)
+  
+  return
+  unit:assert-equals(
+     data($file/@src),
+     'word/document.xml'
+  )
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:ensure-contents-fail</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"><xqdoc:literal type="xs:string">expected</xqdoc:literal><xqdoc:literal type="xs:string">sc:docx-no-content</xqdoc:literal></xqdoc:annotation></xqdoc:annotations><xqdoc:signature>declare %unit:test("expected", "sc:docx-no-content") function sct:ensure-contents-fail() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>ensure-contents</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check-tests</xqdoc:uri><xqdoc:name>badDOCX</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:ensure-contents-fail()
+{
+  sc:ensure-contents($sct:badDOCX)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:comment><xqdoc:description>manifest created before the simplify transform should contain @src paths to 
+the input and @xml:base</xqdoc:description></xqdoc:comment><xqdoc:name>sct:build-manifest</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:build-manifest() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>build-manifest</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="4"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>ends-with</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check-tests</xqdoc:uri><xqdoc:name>goodDOCX</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:build-manifest()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX)
+  
+  return
+  (unit:assert(
+    $manifest/file/@xml:base =&gt; ends-with('/test/proper/')
+  ),
+  unit:assert(
+    $manifest/file/@src eq "word/document.xml"
+  ))  
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:comment><xqdoc:description>manifest returned after the successful transform should now also contain</xqdoc:description><xqdoc:custom tag="dest">paths to the output
+N.B. we have to do some fixups on the URIs to make this portable</xqdoc:custom></xqdoc:comment><xqdoc:name>sct:simplify-styles</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:simplify-styles() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="1"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>build-manifest</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>data</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>data</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>data</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>simplify-styles</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="6"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>replace</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="6"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>replace</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.andrewsales.com/style-check-tests</xqdoc:uri><xqdoc:name>goodDOCX</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>manifest</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:simplify-styles()
+{
+  let $manifest := sc:build-manifest($sct:goodDOCX) =&gt; sc:simplify-styles()
+  
+  return
+  (
+    unit:assert-equals(
+      $manifest/file/@dest/data(), 
+      resolve-uri('proper/out/document.xml') =&gt; replace('///', '/')
+    ),
+    unit:assert-equals(
+      $manifest/file/@src/data(), "word/document.xml"
+    ),
+    unit:assert-equals(
+      $manifest/file/@xml:base/data(),
+      resolve-uri('proper/') =&gt; replace('///', '/')
+    )
+  )
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:validator-jar</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:validator-jar() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/proc</xqdoc:uri><xqdoc:name>execute</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="4"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>substring-after</xqdoc:name></xqdoc:invoked><xqdoc:body>function sct:validator-jar()
+{
+  unit:assert-equals(
+    proc:execute(
+      'java',
+     ('-jar', resolve-uri("../etc/validator.jar")=&gt;substring-after('file:///'))
+   )/code,
+   &lt;code&gt;0&lt;/code&gt;	(:ran successfully:)
+  )
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:validate-no-errors</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:validate-no-errors() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>validate</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>parse-xml</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>result</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:validate-no-errors()
+{
+  let $result := sc:validate(&lt;files&gt;&lt;file&gt;{resolve-uri('no-errors/document.xml')}&lt;/file&gt;&lt;/files&gt;, map{})/output
+  
+  return
+  unit:assert-equals(parse-xml($result)/errors/*,())
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:validate-errors</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:validate-errors() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>validate</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>parse-xml</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>count</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>result</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:validate-errors()
+{
+  let $result := sc:validate(&lt;files&gt;&lt;file dest='{resolve-uri("style-error/document.xml")}'&gt;&lt;/file&gt;&lt;/files&gt;, map{})/output =&gt; parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error =&gt; count(), 2)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:validate-multiple</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:validate-multiple() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>validate</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>parse-xml-fragment</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>count</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>result</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:validate-multiple()
+{
+  let $result := sc:validate(
+    &lt;files&gt;
+    &lt;file dest='{resolve-uri("style-error/document.xml")}'&gt;&lt;/file&gt;
+    &lt;file dest='{resolve-uri("no-errors/document.xml")}'&gt;&lt;/file&gt;
+    &lt;/files&gt;, 
+    map{})/output
+    =&gt;parse-xml-fragment()
+    
+  return
+  unit:assert-equals($result/errors =&gt; count(), 2)
+}</xqdoc:body></xqdoc:function><xqdoc:function arity="0"><xqdoc:name>sct:check</xqdoc:name><xqdoc:annotations><xqdoc:annotation name="unit:test"/></xqdoc:annotations><xqdoc:signature>declare %unit:test function sct:check() as item()*</xqdoc:signature><xqdoc:return><xqdoc:type occurrence="*">item()</xqdoc:type></xqdoc:return><xqdoc:invoked arity="2"><xqdoc:uri>http://www.andrewsales.com/style-check</xqdoc:uri><xqdoc:name>check</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="1"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>resolve-uri</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="2"><xqdoc:uri>http://basex.org/modules/unit</xqdoc:uri><xqdoc:name>assert-equals</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>parse-xml</xqdoc:name></xqdoc:invoked><xqdoc:invoked arity="3"><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>count</xqdoc:name></xqdoc:invoked><xqdoc:ref-variable><xqdoc:uri>http://www.w3.org/2005/xpath-functions</xqdoc:uri><xqdoc:name>result</xqdoc:name></xqdoc:ref-variable><xqdoc:body>function sct:check()
+{
+  let $result := sc:check(resolve-uri("style-error.docx"), map{})/output
+  =&gt; parse-xml()
+  
+  return
+  unit:assert-equals($result/errors/error =&gt; count(), 2)
+}</xqdoc:body></xqdoc:function></xqdoc:functions></xqdoc:xqdoc>

@@ -1,0 +1,155 @@
+<XQuery>(:~ Unit tests for the style checking module. :)
+
+<LibraryModule><ModuleDecl><TOKEN>module</TOKEN> <TOKEN>namespace</TOKEN> <NCName>sct</NCName> <TOKEN>=</TOKEN> <StringLiteral>"http://www.andrewsales.com/style-check-tests"</StringLiteral><TOKEN>;</TOKEN></ModuleDecl>
+
+<Prolog><ModuleImport><TOKEN>import</TOKEN> <TOKEN>module</TOKEN> <TOKEN>namespace</TOKEN> <NCName>sc</NCName> <TOKEN>=</TOKEN> <StringLiteral>"http://www.andrewsales.com/style-check"</StringLiteral> <TOKEN>at</TOKEN> <StringLiteral>"../lib/style-check.xqm"</StringLiteral></ModuleImport><TOKEN>;</TOKEN>
+
+(:static test cases:)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <VarDecl><TOKEN>variable</TOKEN> <TOKEN>$</TOKEN><QName>sct:goodDOCX</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>"proper.docx"</StringLiteral><TOKEN>,</TOKEN> <FunctionCall><QName>static-base-uri</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>)</TOKEN></ArgumentList></FunctionCall></VarDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+<AnnotatedDecl><TOKEN>declare</TOKEN> <VarDecl><TOKEN>variable</TOKEN> <TOKEN>$</TOKEN><QName>sct:badDOCX</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>"bad.docx"</StringLiteral><TOKEN>,</TOKEN> <FunctionCall><QName>static-base-uri</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>)</TOKEN></ArgumentList></FunctionCall></VarDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:ensure-file-pass</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FunctionCall><QName>sc:ensure-file</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sct:goodDOCX</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:file not found:)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName><TOKEN>(</TOKEN><StringLiteral>'expected'</StringLiteral><TOKEN>,</TOKEN> <StringLiteral>'sc:file-not-found'</StringLiteral><TOKEN>)</TOKEN></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:ensure-file-fail</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FunctionCall><QName>sc:ensure-file</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'not-my.docx'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:ensure-format-pass</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN>
+    <FunctionCall><QName>sc:ensure-format</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'my.docx'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN>
+    <StringLiteral>'my.docx'</StringLiteral>
+  <TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:not a .docx file:)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName><TOKEN>(</TOKEN><StringLiteral>"expected"</StringLiteral><TOKEN>,</TOKEN> <StringLiteral>'sc:invalid-format'</StringLiteral><TOKEN>)</TOKEN></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:ensure-format-fail</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FunctionCall><QName>sc:ensure-format</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'my.doc'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:unzip-pass</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FunctionCall><QName>sc:unzip</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sct:goodDOCX</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:bad zip:)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName><TOKEN>(</TOKEN><StringLiteral>'expected'</StringLiteral><TOKEN>,</TOKEN> <StringLiteral>'sc:docx-zip'</StringLiteral><TOKEN>)</TOKEN></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:unzip-fail</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+ <FunctionCall><QName>sc:unzip</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sct:badDOCX</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:ensure-contents-pass</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FunctionCall><QName>sc:ensure-contents</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sct:goodDOCX</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:ensure-contents-src</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>file</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>sc:ensure-contents</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sct:goodDOCX</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall></LetBinding></LetClause>
+  
+  <ReturnClause><TOKEN>return</TOKEN>
+  <FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN>
+     <FunctionCall><QName>data</QName><ArgumentList><TOKEN>(</TOKEN><RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>file</QName></VarRef><TOKEN>/</TOKEN><AxisStep><AbbrevForwardStep><TOKEN>@</TOKEN><QName>src</QName></AbbrevForwardStep><PredicateList/></AxisStep></RelativePathExpr><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN>
+     <StringLiteral>'word/document.xml'</StringLiteral>
+  <TOKEN>)</TOKEN></ArgumentList></FunctionCall></ReturnClause></FLWORExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:expected contents not in zip:)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName><TOKEN>(</TOKEN><StringLiteral>'expected'</StringLiteral><TOKEN>,</TOKEN> <StringLiteral>'sc:docx-no-content'</StringLiteral><TOKEN>)</TOKEN></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:ensure-contents-fail</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FunctionCall><QName>sc:ensure-contents</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sct:badDOCX</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ manifest created before the simplify transform should contain @src paths to 
+the input and @xml:base :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:build-manifest</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>manifest</QName> <TOKEN>:=</TOKEN> <FunctionCall><QName>sc:build-manifest</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sct:goodDOCX</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall></LetBinding></LetClause>
+  
+  <ReturnClause><TOKEN>return</TOKEN>
+  <ParenthesizedExpr><TOKEN>(</TOKEN><Expr><FunctionCall><QName>unit:assert</QName><ArgumentList><TOKEN>(</TOKEN>
+    <ArrowExpr><RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>file</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><AbbrevForwardStep><TOKEN>@</TOKEN><QName>xml:base</QName></AbbrevForwardStep> <PredicateList/></AxisStep></RelativePathExpr><TOKEN>=&gt;</TOKEN> <QName>ends-with</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'/test/proper/'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></ArrowExpr>
+  <TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN>
+  <FunctionCall><QName>unit:assert</QName><ArgumentList><TOKEN>(</TOKEN>
+    <ComparisonExpr><RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>file</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><AbbrevForwardStep><TOKEN>@</TOKEN><QName>src</QName></AbbrevForwardStep> <PredicateList/></AxisStep></RelativePathExpr><TOKEN>eq</TOKEN> <StringLiteral>"word/document.xml"</StringLiteral></ComparisonExpr>
+  <TOKEN>)</TOKEN></ArgumentList></FunctionCall></Expr><TOKEN>)</TOKEN></ParenthesizedExpr></ReturnClause></FLWORExpr>  
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+(:~ manifest returned after the successful transform should now also contain
+@dest paths to the output
+N.B. we have to do some fixups on the URIs to make this portable :)
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:simplify-styles</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>manifest</QName> <TOKEN>:=</TOKEN> <ArrowExpr><FunctionCall><QName>sc:build-manifest</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>sct:goodDOCX</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall> <TOKEN>=&gt;</TOKEN> <QName>sc:simplify-styles</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></ArrowExpr></LetBinding></LetClause>
+  
+  <ReturnClause><TOKEN>return</TOKEN>
+  <ParenthesizedExpr><TOKEN>(</TOKEN>
+    <Expr><FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN>
+      <RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>file</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><AbbrevForwardStep><TOKEN>@</TOKEN><QName>dest</QName></AbbrevForwardStep><PredicateList/></AxisStep><TOKEN>/</TOKEN><FunctionCall><QName>data</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></FunctionCall></RelativePathExpr><TOKEN>,</TOKEN> 
+      <ArrowExpr><FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'proper/out/document.xml'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall> <TOKEN>=&gt;</TOKEN> <TOKEN>replace</TOKEN><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'///'</StringLiteral><TOKEN>,</TOKEN> <StringLiteral>'/'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></ArrowExpr>
+    <TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN>
+    <FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN>
+      <RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>file</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><AbbrevForwardStep><TOKEN>@</TOKEN><QName>src</QName></AbbrevForwardStep><PredicateList/></AxisStep><TOKEN>/</TOKEN><FunctionCall><QName>data</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></FunctionCall></RelativePathExpr><TOKEN>,</TOKEN> <StringLiteral>"word/document.xml"</StringLiteral>
+    <TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN>
+    <FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN>
+      <RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>manifest</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>file</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><AbbrevForwardStep><TOKEN>@</TOKEN><QName>xml:base</QName></AbbrevForwardStep><PredicateList/></AxisStep><TOKEN>/</TOKEN><FunctionCall><QName>data</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></FunctionCall></RelativePathExpr><TOKEN>,</TOKEN>
+      <ArrowExpr><FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'proper/'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall> <TOKEN>=&gt;</TOKEN> <TOKEN>replace</TOKEN><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'///'</StringLiteral><TOKEN>,</TOKEN> <StringLiteral>'/'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></ArrowExpr>
+    <TOKEN>)</TOKEN></ArgumentList></FunctionCall></Expr>
+  <TOKEN>)</TOKEN></ParenthesizedExpr></ReturnClause></FLWORExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:validator-jar</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN>
+    <RelativePathExpr><FunctionCall><QName>proc:execute</QName><ArgumentList><TOKEN>(</TOKEN>
+      <StringLiteral>'java'</StringLiteral><TOKEN>,</TOKEN>
+     <ParenthesizedExpr><TOKEN>(</TOKEN><Expr><StringLiteral>'-jar'</StringLiteral><TOKEN>,</TOKEN> <ArrowExpr><FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>"../etc/validator.jar"</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>=&gt;</TOKEN><QName>substring-after</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'file:///'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></ArrowExpr></Expr><TOKEN>)</TOKEN></ParenthesizedExpr>
+   <TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>/</TOKEN><AxisStep><QName>code</QName><PredicateList/></AxisStep></RelativePathExpr><TOKEN>,</TOKEN>
+   <DirElemConstructor><TOKEN>&lt;</TOKEN><QName>code</QName><DirAttributeList/><TOKEN>&gt;</TOKEN><ElementContentChar>0</ElementContentChar><TOKEN>&lt;/</TOKEN><QName>code</QName><TOKEN>&gt;</TOKEN></DirElemConstructor>	(:ran successfully:)
+  <TOKEN>)</TOKEN></ArgumentList></FunctionCall>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:validate-no-errors</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>result</QName> <TOKEN>:=</TOKEN> <RelativePathExpr><FunctionCall><QName>sc:validate</QName><ArgumentList><TOKEN>(</TOKEN><DirElemConstructor><TOKEN>&lt;</TOKEN><QName>files</QName><DirAttributeList/><TOKEN>&gt;</TOKEN><DirElemConstructor><TOKEN>&lt;</TOKEN><QName>file</QName><DirAttributeList/><TOKEN>&gt;</TOKEN><EnclosedExpr><TOKEN>{</TOKEN><FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>'no-errors/document.xml'</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>}</TOKEN></EnclosedExpr><TOKEN>&lt;/</TOKEN><QName>file</QName><TOKEN>&gt;</TOKEN></DirElemConstructor><TOKEN>&lt;/</TOKEN><QName>files</QName><TOKEN>&gt;</TOKEN></DirElemConstructor><TOKEN>,</TOKEN> <MapConstructor><TOKEN>map</TOKEN><TOKEN>{</TOKEN><TOKEN>}</TOKEN></MapConstructor><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>/</TOKEN><AxisStep><QName>output</QName>
+  
+  <PredicateList/></AxisStep></RelativePathExpr></LetBinding></LetClause><ReturnClause><TOKEN>return</TOKEN>
+  <FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN><RelativePathExpr><FunctionCall><QName>parse-xml</QName><ArgumentList><TOKEN>(</TOKEN><VarRef><TOKEN>$</TOKEN><QName>result</QName></VarRef><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>/</TOKEN><AxisStep><QName>errors</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><Wildcard>*</Wildcard><PredicateList/></AxisStep></RelativePathExpr><TOKEN>,</TOKEN><ParenthesizedExpr><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ParenthesizedExpr><TOKEN>)</TOKEN></ArgumentList></FunctionCall></ReturnClause></FLWORExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:validate-errors</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>result</QName> <TOKEN>:=</TOKEN> <ArrowExpr><RelativePathExpr><FunctionCall><QName>sc:validate</QName><ArgumentList><TOKEN>(</TOKEN><DirElemConstructor><TOKEN>&lt;</TOKEN><QName>files</QName><DirAttributeList/><TOKEN>&gt;</TOKEN><DirElemConstructor><TOKEN>&lt;</TOKEN><QName>file</QName><DirAttributeList><S> </S><QName>dest</QName><TOKEN>=</TOKEN><DirAttributeValue><TOKEN>'</TOKEN><EnclosedExpr><TOKEN>{</TOKEN><FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>"style-error/document.xml"</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>}</TOKEN></EnclosedExpr><TOKEN>'</TOKEN></DirAttributeValue></DirAttributeList><TOKEN>&gt;</TOKEN><TOKEN>&lt;/</TOKEN><QName>file</QName><TOKEN>&gt;</TOKEN></DirElemConstructor><TOKEN>&lt;/</TOKEN><QName>files</QName><TOKEN>&gt;</TOKEN></DirElemConstructor><TOKEN>,</TOKEN> <MapConstructor><TOKEN>map</TOKEN><TOKEN>{</TOKEN><TOKEN>}</TOKEN></MapConstructor><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>/</TOKEN><AxisStep><QName>output</QName> <PredicateList/></AxisStep></RelativePathExpr><TOKEN>=&gt;</TOKEN> <QName>parse-xml</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></ArrowExpr></LetBinding></LetClause>
+  
+  <ReturnClause><TOKEN>return</TOKEN>
+  <FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN><ArrowExpr><RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>result</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>errors</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><QName>error</QName> <PredicateList/></AxisStep></RelativePathExpr><TOKEN>=&gt;</TOKEN> <TOKEN>count</TOKEN><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></ArrowExpr><TOKEN>,</TOKEN> <IntegerLiteral>2</IntegerLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall></ReturnClause></FLWORExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:validate-multiple</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>result</QName> <TOKEN>:=</TOKEN> <ArrowExpr><RelativePathExpr><FunctionCall><QName>sc:validate</QName><ArgumentList><TOKEN>(</TOKEN>
+    <DirElemConstructor><TOKEN>&lt;</TOKEN><QName>files</QName><DirAttributeList/><TOKEN>&gt;</TOKEN><ElementContentChar>
+</ElementContentChar><ElementContentChar> </ElementContentChar><ElementContentChar> </ElementContentChar><ElementContentChar> </ElementContentChar><ElementContentChar> </ElementContentChar><DirElemConstructor><TOKEN>&lt;</TOKEN><QName>file</QName><DirAttributeList><S> </S><QName>dest</QName><TOKEN>=</TOKEN><DirAttributeValue><TOKEN>'</TOKEN><EnclosedExpr><TOKEN>{</TOKEN><FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>"style-error/document.xml"</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>}</TOKEN></EnclosedExpr><TOKEN>'</TOKEN></DirAttributeValue></DirAttributeList><TOKEN>&gt;</TOKEN><TOKEN>&lt;/</TOKEN><QName>file</QName><TOKEN>&gt;</TOKEN></DirElemConstructor><ElementContentChar>
+</ElementContentChar><ElementContentChar> </ElementContentChar><ElementContentChar> </ElementContentChar><ElementContentChar> </ElementContentChar><ElementContentChar> </ElementContentChar><DirElemConstructor><TOKEN>&lt;</TOKEN><QName>file</QName><DirAttributeList><S> </S><QName>dest</QName><TOKEN>=</TOKEN><DirAttributeValue><TOKEN>'</TOKEN><EnclosedExpr><TOKEN>{</TOKEN><FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>"no-errors/document.xml"</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>}</TOKEN></EnclosedExpr><TOKEN>'</TOKEN></DirAttributeValue></DirAttributeList><TOKEN>&gt;</TOKEN><TOKEN>&lt;/</TOKEN><QName>file</QName><TOKEN>&gt;</TOKEN></DirElemConstructor><ElementContentChar>
+</ElementContentChar><ElementContentChar> </ElementContentChar><ElementContentChar> </ElementContentChar><ElementContentChar> </ElementContentChar><ElementContentChar> </ElementContentChar><TOKEN>&lt;/</TOKEN><QName>files</QName><TOKEN>&gt;</TOKEN></DirElemConstructor><TOKEN>,</TOKEN> 
+    <MapConstructor><TOKEN>map</TOKEN><TOKEN>{</TOKEN><TOKEN>}</TOKEN></MapConstructor><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>/</TOKEN><AxisStep><QName>output</QName>
+    <PredicateList/></AxisStep></RelativePathExpr><TOKEN>=&gt;</TOKEN><QName>parse-xml-fragment</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></ArrowExpr></LetBinding></LetClause>
+    
+  <ReturnClause><TOKEN>return</TOKEN>
+  <FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN><ArrowExpr><RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>result</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>errors</QName> <PredicateList/></AxisStep></RelativePathExpr><TOKEN>=&gt;</TOKEN> <TOKEN>count</TOKEN><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></ArrowExpr><TOKEN>,</TOKEN> <IntegerLiteral>2</IntegerLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall></ReturnClause></FLWORExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN>
+
+<AnnotatedDecl><TOKEN>declare</TOKEN> <Annotation><TOKEN>%</TOKEN><QName>unit:test</QName></Annotation> <FunctionDecl><TOKEN>function</TOKEN> <QName>sct:check</QName><TOKEN>(</TOKEN><TOKEN>)</TOKEN>
+<EnclosedExpr><TOKEN>{</TOKEN>
+  <FLWORExpr><LetClause><TOKEN>let</TOKEN> <LetBinding><TOKEN>$</TOKEN><QName>result</QName> <TOKEN>:=</TOKEN> <ArrowExpr><RelativePathExpr><FunctionCall><QName>sc:check</QName><ArgumentList><TOKEN>(</TOKEN><FunctionCall><QName>resolve-uri</QName><ArgumentList><TOKEN>(</TOKEN><StringLiteral>"style-error.docx"</StringLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>,</TOKEN> <MapConstructor><TOKEN>map</TOKEN><TOKEN>{</TOKEN><TOKEN>}</TOKEN></MapConstructor><TOKEN>)</TOKEN></ArgumentList></FunctionCall><TOKEN>/</TOKEN><AxisStep><QName>output</QName>
+  <PredicateList/></AxisStep></RelativePathExpr><TOKEN>=&gt;</TOKEN> <QName>parse-xml</QName><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></ArrowExpr></LetBinding></LetClause>
+  
+  <ReturnClause><TOKEN>return</TOKEN>
+  <FunctionCall><QName>unit:assert-equals</QName><ArgumentList><TOKEN>(</TOKEN><ArrowExpr><RelativePathExpr><VarRef><TOKEN>$</TOKEN><QName>result</QName></VarRef><TOKEN>/</TOKEN><AxisStep><QName>errors</QName><PredicateList/></AxisStep><TOKEN>/</TOKEN><AxisStep><QName>error</QName> <PredicateList/></AxisStep></RelativePathExpr><TOKEN>=&gt;</TOKEN> <TOKEN>count</TOKEN><ArgumentList><TOKEN>(</TOKEN><TOKEN>)</TOKEN></ArgumentList></ArrowExpr><TOKEN>,</TOKEN> <IntegerLiteral>2</IntegerLiteral><TOKEN>)</TOKEN></ArgumentList></FunctionCall></ReturnClause></FLWORExpr>
+<TOKEN>}</TOKEN></EnclosedExpr></FunctionDecl></AnnotatedDecl><TOKEN>;</TOKEN></Prolog></LibraryModule><EOF/></XQuery>
