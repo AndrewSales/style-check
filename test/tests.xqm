@@ -125,8 +125,8 @@ declare %unit:test function sct:validate-no-errors()
 
 declare %unit:test function sct:validate-errors()
 {
-  let $result := sc:validate(<files><file dest='{resolve-uri("style-error/document.xml")}'></file></files>, map{})/output => parse-xml()
-  
+  let $result := sc:validate(<files><file dest='{resolve-uri("style-error/document.xml")}'></file></files>, map{})/output
+  => parse-xml()
   return
   unit:assert-equals($result/errors/error => count(), 2)
 };
@@ -152,4 +152,23 @@ declare %unit:test function sct:check()
   
   return
   unit:assert-equals($result/errors/error => count(), 2)
+};
+
+declare %unit:test function sct:run-validator()
+{
+  let $result := proc:execute(
+    'java',
+    (
+      '-jar', resolve-uri('../etc/validator.jar')=>substring-after('file:///')
+    )
+  )
+  
+  return unit:assert(
+    $result/error[../code = '0']
+  )
+};
+
+declare %unit:test function sct:style-dtd-present()
+{
+  unit:assert(file:exists(resolve-uri('../dtd/style-schema.dtd', static-base-uri())))
 };
