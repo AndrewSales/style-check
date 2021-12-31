@@ -181,3 +181,14 @@ declare %unit:test function sct:filename-with-spaces()
   return
   unit:assert($result/*/self::errors)	(:we got an error report:)
 };
+
+declare %unit:test function sct:stylename-with-spaces()
+{
+  let $result := sc:check(resolve-uri('stylename-with-spaces.docx'), map{})/output
+  => parse-xml()
+  return
+  unit:assert-equals(
+    $result/errors/error[1]/data(), 
+    'Element type "Para.Mystylenamehasspaces" must be declared.'
+  )
+};
