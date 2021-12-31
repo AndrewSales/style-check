@@ -7,6 +7,7 @@ import module namespace sc = "http://www.andrewsales.com/style-check" at "../lib
 (:static test cases:)
 declare variable $sct:goodDOCX := resolve-uri("proper.docx", static-base-uri());
 declare variable $sct:badDOCX := resolve-uri("bad.docx", static-base-uri());
+declare variable $sct:filenameWithSpaces := resolve-uri('filename%20with%20spaces.docx');
 
 declare %unit:test function sct:ensure-file-pass()
 {
@@ -171,4 +172,12 @@ declare %unit:test function sct:run-validator()
 declare %unit:test function sct:style-dtd-present()
 {
   unit:assert(file:exists(resolve-uri('../dtd/style-schema.dtd', static-base-uri())))
+};
+
+declare %unit:test function sct:filename-with-spaces()
+{
+  let $result := sc:check($sct:filenameWithSpaces, map{})/output
+  => parse-xml()
+  return
+  unit:assert($result/*/self::errors)	(:we got an error report:)
 };

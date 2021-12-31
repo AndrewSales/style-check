@@ -177,12 +177,15 @@ as element(file)+
 {
   for $x in $sc:DOCX_CONTENT
   let $unzip-path := sc:unzip-path($docx)
-  let $path := resolve-uri($x, $unzip-path)
+  (:cope with spaces in filenames: escape them for resolution purposes, but
+  retain them for checking the actual file path exists:)
+  let $uri := resolve-uri($x, $unzip-path => replace(' ', '%20'))
+  let $path := replace($uri, '%20', ' ')
   return
     if(file:exists($path))
     then <file xml:base='file:/{$unzip-path}' src='{$x}'/>
     else error(xs:QName('sc:docx-no-content'), 'no content found: '|| $path ||
-  '; expected: ' || $x)
+    '; expected: ' || $x)
 };
 
 (:~ 
