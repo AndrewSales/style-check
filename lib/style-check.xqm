@@ -80,7 +80,7 @@ as element(result)
 {
   let $_ := sc:debug('validate paths='||
     string-join($manifest/file/@dest, ' '), $options)
-  return
+  let $result :=
   proc:execute(
     'java',
     (
@@ -89,6 +89,26 @@ as element(result)
       if($options ? ($sc:HALT_ON_INVALID)) then '--'||$sc:HALT_ON_INVALID else ()
     )
   )
+  return
+  if($result/code eq '-1')	(:indicates abnormal termination:)
+  then $result
+  else sc:refine-report($result)
+};
+
+(:~ 
+ : Amend the error messages containined in the report passed in to direct users
+ : to the region of affected text in the document, and couch the message in
+ : style-centric (rather than XML) terms.
+ : Note this is not attempted if the return code was <code>-1</code>, since this
+ : indicates abnormal termination, usually resulting from an I/O or 
+ : well-formedness error.
+ : @param result the report resulting from sc:validate()
+ : @return report containing refined error messages
+ :)
+declare function sc:refine-report($result as element(result)) 
+as element(result)
+{
+  <result>{parse-xml-fragment($result/output)}{$result/(error|code)}</result>
 };
 
 (:~ Build the manifest for the Word XML files extracted. 

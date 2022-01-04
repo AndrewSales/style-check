@@ -123,8 +123,7 @@ declare %unit:test function sct:validate-no-errors()
 
 declare %unit:test function sct:validate-errors()
 {
-  let $result := sc:validate(<files><file dest='{resolve-uri("style-error/document.xml")}'></file></files>, map{})/output
-  => parse-xml()
+  let $result := sc:validate(<files><file dest='{resolve-uri("style-error/document.xml")}'></file></files>, map{})
   return
   unit:assert-equals($result/errors/error => count(), 2)
 };
@@ -136,18 +135,14 @@ declare %unit:test function sct:validate-multiple()
     <file dest='{resolve-uri("style-error/document.xml")}'></file>
     <file dest='{resolve-uri("no-errors/document.xml")}'></file>
     </files>, 
-    map{})/output
-    =>parse-xml-fragment()
-    
+    map{})    
   return
   unit:assert-equals($result/errors => count(), 2)
 };
 
 declare %unit:test function sct:check()
 {
-  let $result := sc:check(resolve-uri("style-error.docx"), map{})/output
-  => parse-xml()
-  
+  let $result := sc:check(resolve-uri("style-error.docx"), map{})
   return
   unit:assert-equals($result/errors/error => count(), 2)
 };
@@ -212,16 +207,14 @@ declare %unit:test function sct:style-dtd-present()
 
 declare %unit:test function sct:filename-with-spaces()
 {
-  let $result := sc:check($sct:filenameWithSpaces, map{})/output
-  => parse-xml()
+  let $result := sc:check($sct:filenameWithSpaces, map{})
   return
   unit:assert($result/*/self::errors)	(:we got an error report:)
 };
 
 declare %unit:test function sct:stylename-with-spaces()
 {
-  let $result := sc:check(resolve-uri('stylename-with-spaces.docx'), map{})/output
-  => parse-xml()
+  let $result := sc:check(resolve-uri('stylename-with-spaces.docx'), map{})
   return
   unit:assert-equals(
     $result/errors/error[1]/data(), 
