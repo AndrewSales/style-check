@@ -106,14 +106,10 @@ declare %unit:test function sct:simplify-styles()
   )
 };
 
-declare %unit:test function sct:validator-jar()
+declare %unit:test function sct:validator-jar-exists()
 {
-  unit:assert-equals(
-    proc:execute(
-      'java',
-     ('-jar', resolve-uri("../etc/validator.jar")=>substring-after('file:///'))
-   )/code,
-   <code>0</code>	(:ran successfully:)
+  unit:assert(
+    file:exists(resolve-uri("../etc/validator.jar"))
   )
 };
 
@@ -199,9 +195,14 @@ declare %unit:test function sct:run-validator()
     )
   )
   
-  return unit:assert(
-    $result/error[../code = '0']
-  )
+  return 
+  (unit:assert-equals(
+    $result/error, <error>[FATAL]:no paths supplied for validation
+</error>
+  ),
+  unit:assert-equals(
+    $result/code, <code>-1</code>
+  ))
 };
 
 declare %unit:test function sct:style-dtd-present()
