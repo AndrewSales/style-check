@@ -8,6 +8,7 @@ import module namespace sc = "http://www.andrewsales.com/style-check" at "../lib
 declare variable $sct:goodDOCX := resolve-uri("proper.docx", static-base-uri());
 declare variable $sct:badDOCX := resolve-uri("bad.docx", static-base-uri());
 declare variable $sct:filenameWithSpaces := resolve-uri('filename%20with%20spaces.docx');
+declare variable $sct:malformedXML := resolve-uri('malformed.xml');
 
 declare %unit:test function sct:ensure-file-pass()
 {
@@ -153,6 +154,40 @@ declare %unit:test function sct:check()
   
   return
   unit:assert-equals($result/errors/error => count(), 2)
+};
+
+(:the validator exits with error code -1 on fatal errors:)
+declare %unit:test function sct:validate-io-error()
+{
+  unit:assert-equals(
+    sc:validate(
+      <files><file dest='non-existent.xml'/></files>,
+      map{}
+    )/code,
+    <code>-1</code>
+  )
+};
+
+declare %unit:test function sct:validate-empty-path()
+{
+  unit:assert-equals(
+    sc:validate(
+      <files><file dest=''/></files>,
+      map{}
+    )/code,
+    <code>-1</code>
+  )
+};
+
+declare %unit:test function sct:validate-malformed-error()
+{
+  unit:assert-equals(
+    sc:validate(
+      <files><file dest='{$sct:malformedXML}'/></files>,
+      map{}
+    )/code,
+    <code>-1</code>
+  )
 };
 
 declare %unit:test function sct:run-validator()
