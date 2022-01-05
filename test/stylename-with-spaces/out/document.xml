@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Document
+  SYSTEM "file:///C:/Users/asales/git/style-check/dtd/style-schema.dtd">
+<Document xpath="/Q{http://schemas.openxmlformats.org/wordprocessingml/2006/main}document[1]/Q{http://schemas.openxmlformats.org/wordprocessingml/2006/main}body[1]/Q{http://schemas.openxmlformats.org/wordprocessingml/2006/main}p[1]"><Para.Mystylenamehasspaces xpath="/Q{http://schemas.openxmlformats.org/wordprocessingml/2006/main}document[1]/Q{http://schemas.openxmlformats.org/wordprocessingml/2006/main}body[1]/Q{http://schemas.openxmlformats.org/wordprocessingml/2006/main}p[1]">foo</Para.Mystylenamehasspaces></Document>
