@@ -96,8 +96,8 @@ as element(result)
 };
 
 (:~ 
- : Amend the error messages containined in the report passed in to direct users
- : to the region of affected text in the document, and couch the message in
+ : Amend the error messages contained in the report passed in to direct users to
+ : the region of affected text in the document, and couch the message in
  : style-centric (rather than XML) terms.
  : Note this is not attempted if the return code was <code>-1</code>, since this
  : indicates abnormal termination, usually resulting from an I/O or 
@@ -108,7 +108,10 @@ as element(result)
 declare function sc:refine-report($result as element(result)) 
 as element(result)
 {
-  <result>{parse-xml-fragment($result/output)}{$result/(error|code)}</result>
+  xslt:transform(
+    <result>{parse-xml-fragment($result/output)}{$result/(error|code)}</result>,
+    resolve-uri('../xsl/refine-report.xsl')
+  )/*
 };
 
 (:~ Build the manifest for the Word XML files extracted. 
@@ -129,7 +132,8 @@ as element(files)
 
 (:~ Batch-transform the manifest of files passed in.
  : @param manifest the manifest of files
- : @return the manifest, each document in the batch represented by <code>&lt;file src='...' dest='...'/></code>
+ : @return the manifest, each document in the batch represented by 
+ : <code>&lt;file src='...' dest='...'/></code>
  :)
 declare function sc:simplify-styles($manifest as element(files))
 as element(files)

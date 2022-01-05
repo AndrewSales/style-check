@@ -2,6 +2,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:math="http://www.w3.org/2005/xpath-functions/math"
+    xmlns:wordml='http://schemas.openxmlformats.org/wordprocessingml/2006/main'
     xmlns:asdp='http://www.andrewsales.com'
     exclude-result-prefixes="#all"
     version="3.0">
@@ -18,10 +19,25 @@
         </xsl:copy>
     </xsl:template>
     
-    <xsl:template match="error[@location]">
+    <xsl:template match="errors[@systemId]">
         <xsl:copy>
-            <!-- TODO: handle @location to retrieve region of affected text -->
+            <xsl:copy-of select="@*"/>
+            <!-- hack the path to the DOCX XML as unzipped -->
+            <xsl:variable name="path" select="replace(@systemId, '/out/', '/word/')"/>
+            <xsl:apply-templates select="error">
+                <xsl:with-param name="doc" select="doc($path)" tunnel="yes"/>
+            </xsl:apply-templates>
+        </xsl:copy>
+    </xsl:template>
+    
+    <xsl:template match="error[@location]">
+        <xsl:param name="doc" tunnel="yes" as="document-node(element(wordml:document))"/>
+        <xsl:copy>
+            <xsl:copy-of select="@*"/>
             <xsl:call-template name="refine-error-message"/>
+            <xsl:variable name="text"><xsl:evaluate context-item="$doc" xpath="@location"/></xsl:variable>
+            <xsl:text>: </xsl:text>
+            <text style="{if($text/wordml:p) then 'para' else 'char'}"><xsl:value-of select="$text"/></text>
         </xsl:copy>
     </xsl:template>
     
@@ -78,6 +94,7 @@
             <xsl:when test="starts-with($stylename, 'Para.')">paragraph</xsl:when>
             <xsl:when test="starts-with($stylename, 'Text.')">character</xsl:when>
             <xsl:when test="starts-with($stylename, 'Document')">document</xsl:when>
+            <xsl:otherwise><xsl:value-of select="$stylename"/></xsl:otherwise>
         </xsl:choose>
     </xsl:function>
     

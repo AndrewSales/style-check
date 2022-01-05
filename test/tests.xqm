@@ -115,7 +115,10 @@ declare %unit:test function sct:validator-jar-exists()
 
 declare %unit:test function sct:validate-no-errors()
 {
-  let $result := sc:validate(<files><file>{resolve-uri('no-errors/document.xml')}</file></files>, map{})/output
+  let $result := sc:validate(
+    <files><file>{resolve-uri('no-errors/out/document.xml')}</file></files>, 
+    map{}
+  )/output
   
   return
   unit:assert-equals(parse-xml($result)/errors/*,())
@@ -123,7 +126,10 @@ declare %unit:test function sct:validate-no-errors()
 
 declare %unit:test function sct:validate-errors()
 {
-  let $result := sc:validate(<files><file dest='{resolve-uri("style-error/document.xml")}'></file></files>, map{})
+  let $result := sc:validate(
+    <files><file dest='{resolve-uri("style-error/out/document.xml")}'/></files>, 
+    map{}
+  )
   return
   unit:assert-equals($result/errors/error => count(), 2)
 };
@@ -132,12 +138,13 @@ declare %unit:test function sct:validate-multiple()
 {
   let $result := sc:validate(
     <files>
-    <file dest='{resolve-uri("style-error/document.xml")}'></file>
-    <file dest='{resolve-uri("no-errors/document.xml")}'></file>
+      <file dest='{resolve-uri("style-error/out/document.xml")}'></file>
+      <file dest='{resolve-uri("no-errors/out/document.xml")}'></file>
     </files>, 
-    map{})    
+    map{}
+  )    
   return
-  unit:assert-equals($result/errors => count(), 2)
+  unit:assert-equals($result/errors => count(), 2)	(:two error reports in o/p:)
 };
 
 declare %unit:test function sct:check()
@@ -209,15 +216,44 @@ declare %unit:test function sct:filename-with-spaces()
 {
   let $result := sc:check($sct:filenameWithSpaces, map{})
   return
-  unit:assert($result/*/self::errors)	(:we got an error report:)
+  (
+    unit:assert-equals($result/code, <code>0</code>),	(:process succeeded:)
+    unit:assert(ends-with($result/errors/@systemId, 'filename with spaces/out/document.xml'))	(:filepath reported correctly:)
+  )
 };
 
 declare %unit:test function sct:stylename-with-spaces()
 {
   let $result := sc:check(resolve-uri('stylename-with-spaces.docx'), map{})
   return
-  unit:assert-equals(
-    $result/errors/error[1]/data(), 
-    'Element type "Para.Mystylenamehasspaces" must be declared.'
+  (
+    unit:assert(
+      starts-with($result/errors/error[1], 'unrecognized paragraph style: Mystylenamehasspaces: ')
+    ),
+    unit:assert(
+      $result/errors/error[1]/text[.='foo']
+    )
   )
+  
+};
+
+declare %unit:test function sct:report-refined()
+{
+  let $result := sc:check(resolve-uri('style-error.docx'), map{})
+  return
+  (
+    unit:assert(
+      starts-with($result/errors/error[1], 'unrecognized character style: BookTitle: ')
+    ),
+    unit:assert(
+      $result/errors/error[1]/text[.='Bad style here']
+    ),
+    unit:assert(
+      starts-with($result/errors/error[2], "paragraph style 'Normal' should only contain one of these character styles: symbol, case, b, i: ")
+    ),
+    unit:assert(
+      $result/errors/error[2]/text[.='Bad style here']
+    )
+  )
+  
 };
