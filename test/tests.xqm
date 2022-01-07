@@ -72,7 +72,7 @@ declare %unit:test('expected', 'sc:docx-no-content') function sct:ensure-content
 the input and @xml:base :)
 declare %unit:test function sct:build-manifest()
 {
-  let $manifest := sc:build-manifest($sct:goodDOCX)
+  let $manifest := sc:build-manifest($sct:goodDOCX, map{})
   
   return
   (unit:assert(
@@ -88,7 +88,7 @@ declare %unit:test function sct:build-manifest()
 N.B. we have to do some fixups on the URIs to make this portable :)
 declare %unit:test function sct:simplify-styles()
 {
-  let $manifest := sc:build-manifest($sct:goodDOCX) => sc:simplify-styles()
+  let $manifest := sc:build-manifest($sct:goodDOCX, map{}) => sc:simplify-styles()
   
   return
   (
@@ -124,6 +124,19 @@ declare %unit:test function sct:validate-no-errors()
   unit:assert-equals(parse-xml($result)/errors/*,())
 };
 
+declare %unit:test function sct:validate-no-paths()
+{
+  let $result := sc:validate(
+    <files><file></file></files>, 
+    map{}
+  )
+  
+  return
+  (unit:assert($result/error[.='[FATAL]:no paths supplied for validation
+']),
+  unit:assert($result/code[.='-1']))
+};
+
 declare %unit:test function sct:validate-errors()
 {
   let $result := sc:validate(
@@ -131,16 +144,14 @@ declare %unit:test function sct:validate-errors()
     map{}
   )
   return
-  unit:assert-equals($result/errors/error => count(), 2)
+  unit:assert-equals($result/errors/error => count(), 3)
 };
 
 declare %unit:test function sct:validate-multiple()
 {
-  let $result := sc:validate(
-    <files>
-      <file dest='{resolve-uri("style-error/out/document.xml")}'></file>
-      <file dest='{resolve-uri("no-errors/out/document.xml")}'></file>
-    </files>, 
+  let $result := sc:check(
+    (resolve-uri("style-error.docx"),
+    resolve-uri("no-errors.docx")),
     map{}
   )    
   return
@@ -151,7 +162,7 @@ declare %unit:test function sct:check()
 {
   let $result := sc:check(resolve-uri("style-error.docx"), map{})
   return
-  unit:assert-equals($result/errors/error => count(), 2)
+  unit:assert-equals($result/errors/error => count(), 3)
 };
 
 (:the validator exits with error code -1 on fatal errors:)
@@ -242,17 +253,15 @@ declare %unit:test function sct:report-refined()
   let $result := sc:check(resolve-uri('style-error.docx'), map{})
   return
   (
+    unit:assert-equals(count($result/errors/error), 3),
     unit:assert(
-      starts-with($result/errors/error[1], 'unrecognized character style: BookTitle: ')
-    ),
-    unit:assert(
-      $result/errors/error[1]/text[.='Bad style here']
-    ),
-    unit:assert(
-      starts-with($result/errors/error[2], "paragraph style 'Normal' should only contain one of these character styles: symbol, case, b, i: ")
+      starts-with($result/errors/error[3], 'unrecognized character style: BookTitle: ')
     ),
     unit:assert(
       $result/errors/error[2]/text[.='Bad style here']
+    ),
+    unit:assert(
+      $result/errors/error[3]/text[.='Bad style here']
     )
   )
   
