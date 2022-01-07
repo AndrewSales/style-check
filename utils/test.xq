@@ -6,4 +6,7 @@ let $paths :=
   let $path := file:resolve-path($path, $dir)
   where file:is-file($path)
   return $path
-return sc:check($paths, map{'debug':true(), 'halt-on-invalid':false()})
+return sc:check(
+  $paths, 
+  map{'debug':true(), 'halt-on-invalid':true(), 'profile':true()}
+)

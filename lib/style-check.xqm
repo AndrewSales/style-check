@@ -37,6 +37,8 @@ declare variable $sc:STYLE_SCHEMA as xs:anyURI external :=
   resolve-uri('../dtd/style-schema.dtd');
 (:~ debugging flag :)  
 declare variable $sc:OPT_DEBUG as xs:string := 'debug';
+(:~ profiling flag :)  
+declare variable $sc:OPT_PROFILE as xs:string := 'profile';
 (:~ string of the halt-on-invalid validation option :)
 declare variable $sc:HALT_ON_INVALID as xs:string := 'halt-on-invalid';
 
@@ -58,9 +60,20 @@ declare function sc:check(
 )
 {
   let $_ := sc:debug('check(): ' || string-join($docs, ' '), $options)
-  let $manifest := sc:build-manifest($docs)
+  let $start := prof:current-ms()
+  let $manifest := sc:build-manifest($docs, $options)
+  let $_ := sc:profile('manifest built, '||count($manifest/file)||' files', 
+    $start, $options)
   let $_ := sc:debug('manifest=' || $manifest, $options)
-  return sc:simplify-styles($manifest) => sc:validate($options)
+  let $start := prof:current-ms()
+  let $simplified := sc:simplify-styles($manifest)
+  let $_ := sc:profile('styles simplified', $start, $options)
+  let $start := prof:current-ms()
+  return 
+  (
+    sc:validate($simplified, $options), 
+    sc:profile('validated', $start, $options)
+  )
 };
 
 (:~ 
@@ -118,14 +131,20 @@ as element(result)
  : @param docs the absolute URI(s) of the document(s) to process
  : @return the manifest, each document in the batch represented by <code>&lt;file src='...'/></code>
  :)
-declare function sc:build-manifest($docs as xs:string+)
+declare function sc:build-manifest($docs as xs:string+, $options as map(*))
 as element(files)
 {
   <files>{
     $docs !
     (
-      sc:ensure-file(.) => sc:ensure-format() => sc:unzip(),
-      sc:ensure-contents(.)
+      let $files := sc:ensure-file(.) => sc:ensure-format() 
+      let $start := prof:current-ms()
+      return 
+      (
+        sc:unzip($files),
+        sc:profile('unzipped '||., $start, $options),
+        sc:ensure-contents(.)
+      )
     )
   }</files>
 };
@@ -140,9 +159,21 @@ as element(files)
 {
   xslt:transform(
     $manifest, 
-    resolve-uri('../xsl/batch-transform.xsl'),	(:TODO: compile this to SEF too?:)
+    resolve-uri('../xsl/batch-transform.xsl'),	(:negligible gain if compiled to SEF:)
     map{'dtd-loc':$sc:STYLE_SCHEMA}
   )/files
+};
+
+declare function sc:profile(
+  $msg as xs:string, 
+  $start as xs:integer, 
+  $options as map(*)
+)
+{
+  if($options?($sc:OPT_PROFILE))
+  then
+  trace('[profile]:' || $msg || ' ' || prof:current-ms() - $start || 'ms')
+  else()
 };
 
 (:~ Ensure the file to be processed exists.
