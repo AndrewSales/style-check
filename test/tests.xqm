@@ -10,6 +10,21 @@ declare variable $sct:badDOCX := resolve-uri("bad.docx", static-base-uri());
 declare variable $sct:filenameWithSpaces := resolve-uri('filename%20with%20spaces.docx');
 declare variable $sct:malformedXML := resolve-uri('malformed.xml');
 
+declare 
+%unit:before-module 
+%unit:after-module 
+function sct:cleanup()
+{
+  for $dir in ('proper', 'style-error', 'no-errors', 'stylename-with-spaces',
+  'filename%20with%20spaces')
+  let $path := resolve-uri($dir)
+  return
+  if(file:exists($path))
+  then
+  file:delete($path, true())
+  else ()
+};
+
 declare %unit:test function sct:ensure-file-pass()
 {
   sc:ensure-file($sct:goodDOCX)
@@ -139,10 +154,7 @@ declare %unit:test function sct:validate-no-paths()
 
 declare %unit:test function sct:validate-errors()
 {
-  let $result := sc:validate(
-    <files><file dest='{resolve-uri("style-error/out/document.xml")}'/></files>, 
-    map{}
-  )
+  let $result := sc:check(resolve-uri("style-error.docx"), map{})
   return
   unit:assert-equals($result/errors/error => count(), 3)
 };
