@@ -128,15 +128,21 @@ declare %unit:test function sct:validator-jar-exists()
   )
 };
 
+declare %unit:before('validate-no-errors') function sct:before-validate-no-errors()
+{
+  sc:build-manifest((resolve-uri('no-errors.docx')), map{}) => sc:simplify-styles()
+};
+
 declare %unit:test function sct:validate-no-errors()
 {
   let $result := sc:validate(
     <files><file>{resolve-uri('no-errors/out/document.xml')}</file></files>, 
     map{}
-  )/output
+  )
   
   return
-  unit:assert-equals(parse-xml($result)/errors/*,())
+  (unit:assert($result/errors),
+  unit:assert-equals($result/errors/*,()))
 };
 
 declare %unit:test function sct:validate-no-paths()
@@ -277,4 +283,37 @@ declare %unit:test function sct:report-refined()
     )
   )
   
+};
+
+(:Schematron validation correctly inserts errors into the report passed in:)
+declare %unit:test function sct:schematron-report()
+{
+  let $manifest := <result>
+  <errors systemId="../test/style-error/out/document.xml" haltOnInvalid="false">
+    <error location="/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}document[1]/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}body[1]/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}p[1]">unrecognized paragraph style: Normal: <text style="para">Foo</text>
+    </error>
+    <error location="/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}document[1]/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}body[1]/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}p[2]">unrecognized paragraph style: Normal: <text style="para">Bad style here</text>
+    </error>
+    <error location="/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}document[1]/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}body[1]/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}p[2]/Q{{http://schemas.openxmlformats.org/wordprocessingml/2006/main}}r[1]">unrecognized character style: BookTitle: <text style="char">Bad style here</text>
+    </error>
+  </errors>
+<error>[info]:Validation completed in 225 ms
+</error>
+  <code>0</code>
+</result>
+
+  return 
+  unit:assert-equals(sc:validate-schematron($manifest)/errors/schematron/error
+  => count(), 4)
+};
+
+(:halt on invalid respected:)
+declare %unit:test function sct:schematron-halt-on-invalid()
+{
+  let $result := sc:check(
+    (resolve-uri("no-errors.docx"), resolve-uri("style-error.docx")),
+    map{'halt-on-invalid':true(), 'schematron':true()}
+  )
+  return
+  unit:assert($result/errors[2]/schematron)
 };
