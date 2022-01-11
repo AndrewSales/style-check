@@ -35,12 +35,14 @@ declare variable $sc:DOCX_CONTENT as element(archive:entry)+ :=
 (:~ location of the style schema applied during validation :)
 declare variable $sc:STYLE_SCHEMA as xs:anyURI external := 
   resolve-uri('../dtd/style-schema.dtd');
+(:~ Schematron validation flag :)  
+declare variable $sc:OPT_SCHEMATRON_VALIDATION as xs:string := 'schematron';
 (:~ debugging flag :)  
 declare variable $sc:OPT_DEBUG as xs:string := 'debug';
 (:~ profiling flag :)  
 declare variable $sc:OPT_PROFILE as xs:string := 'profile';
 (:~ string of the halt-on-invalid validation option :)
-declare variable $sc:HALT_ON_INVALID as xs:string := 'halt-on-invalid';
+declare variable $sc:OPT_HALT_ON_INVALID as xs:string := 'halt-on-invalid';
 
 (:~ 
  : Process one or more word-processing documents.
@@ -99,13 +101,26 @@ as element(result)
     (
       '-jar', resolve-uri('../etc/validator.jar')=>substring-after('file:///'),
       $manifest/file/@dest ! data(),
-      if($options ? ($sc:HALT_ON_INVALID)) then '--'||$sc:HALT_ON_INVALID else ()
+      if($options ? ($sc:OPT_HALT_ON_INVALID)) 
+      then '--'||$sc:OPT_HALT_ON_INVALID else ()
     )
   )
   return
   if($result/code eq '-1')	(:indicates abnormal termination:)
   then $result
+  else 
+  if($options ? ($sc:OPT_SCHEMATRON_VALIDATION))
+  then sc:refine-report($result) => sc:validate-schematron()
   else sc:refine-report($result)
+};
+
+declare function sc:validate-schematron($report as element(result))
+as element(result)
+{
+  xslt:transform(
+    $report,
+    resolve-uri('../xsl/schematron-validation.xsl')
+  )/result
 };
 
 (:~ 
