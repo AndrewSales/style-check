@@ -276,13 +276,10 @@ declare %unit:test function sct:report-refined()
   (
     unit:assert-equals(count($result/errors/error), 3),
     unit:assert(
-      starts-with($result/errors/error[3], 'unrecognized character style: BookTitle: ')
+      starts-with($result/errors/error[1], 'unrecognized character style: BookTitle: ')
     ),
     unit:assert(
       $result/errors/error[2]/text[.='Bad style here']
-    ),
-    unit:assert(
-      $result/errors/error[3]/text[.='Bad style here']
     )
   )
   
@@ -310,7 +307,7 @@ declare %unit:test function sct:schematron-report()
   => count(), 4)
 };
 
-(:halt on invalid respected:)
+(:halt on invalid respected - SCH errors only reported for first file in batch:)
 declare %unit:test function sct:schematron-halt-on-invalid()
 {
   let $result := sc:check(
@@ -318,5 +315,8 @@ declare %unit:test function sct:schematron-halt-on-invalid()
     map{'halt-on-invalid':true(), 'schematron':true()}
   )
   return
-  unit:assert($result/errors[2]/schematron)
+  (
+    unit:assert-equals(count($result/errors/schematron), 1),
+    unit:assert($result/errors[1]/schematron/error)
+  )
 };
