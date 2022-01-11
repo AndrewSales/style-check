@@ -32,7 +32,7 @@ are defined by Word. Also, the names of the root element (Document) and those
 of the built-in inline styles are fixed and modifying them will result in 
 invalid documents where they occur.
 -->
-<!ENTITY % document-content "ANY">
+<!ENTITY % document-content "(Para.Normal)">
 <!ENTITY % table-entry-content "ANY">
 <!ENTITY % xpath-att "xpath CDATA #IMPLIED">
 <!ENTITY % inline-styles "(#PCDATA|highlight|b|i|sc|sub|sup|ul|symbol|url)*">
@@ -40,6 +40,11 @@ invalid documents where they occur.
 
 <!ELEMENT Document %document-content;>
 <!ATTLIST Document
+  xmlns CDATA #FIXED ''
+%xpath-att;>
+
+<!ELEMENT Para.Normal %inline-styles;>
+<!ATTLIST Para.Normal
   xmlns CDATA #FIXED ''
 %xpath-att;>
 

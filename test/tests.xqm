@@ -133,16 +133,19 @@ declare %unit:before('validate-no-errors') function sct:before-validate-no-error
   sc:build-manifest((resolve-uri('no-errors.docx')), map{}) => sc:simplify-styles()
 };
 
+(:there's an empty error report:)
 declare %unit:test function sct:validate-no-errors()
 {
   let $result := sc:validate(
-    <files><file>{resolve-uri('no-errors/out/document.xml')}</file></files>, 
+    <files><file dest='{resolve-uri('no-errors/out/document.xml')}'/></files>, 
     map{}
   )
   
-  return
-  (unit:assert($result/errors),
-  unit:assert-equals($result/errors/*,()))
+  return  
+  (
+    unit:assert($result/errors),
+    unit:assert-equals($result/errors/*, ())
+  )
 };
 
 declare %unit:test function sct:validate-no-paths()
