@@ -320,3 +320,16 @@ declare %unit:test function sct:schematron-halt-on-invalid()
     unit:assert($result/errors[1]/schematron/error)
   )
 };
+
+(:switch off validation:)
+declare %unit:test function sct:no-validation()
+{
+  let $result := sc:check(
+    resolve-uri("style-error.docx"),
+    map{'no-validation':()}
+  )
+  return
+  (
+    unit:assert-equals($result/errors, ())
+  )
+};

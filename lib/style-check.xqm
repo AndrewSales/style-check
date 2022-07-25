@@ -43,6 +43,8 @@ declare variable $sc:OPT_DEBUG as xs:string := 'debug';
 declare variable $sc:OPT_PROFILE as xs:string := 'profile';
 (:~ string of the halt-on-invalid validation option :)
 declare variable $sc:OPT_HALT_ON_INVALID as xs:string := 'halt-on-invalid';
+(:~ switch to turn off validation :)
+declare variable $sc:OPT_NO_VALIDATION as xs:string := 'no-validation';
 
 (:~ 
  : Process one or more word-processing documents.
@@ -50,7 +52,8 @@ declare variable $sc:OPT_HALT_ON_INVALID as xs:string := 'halt-on-invalid';
  : Options are: 
  : <ul><li>debug (Boolean): whether to emit debugging messages via trace()</li>
  : <li>halt-on-invalid (Boolean): whether to halt processing on the first invalid 
- : document returned by <code>sc:validate()</code></li></ul>
+ : document returned by <code>sc:validate()</code></li>
+ : <li>no-validation: switches validation off (any value may be provided)</code></li></ul>
  :
  : @param docs the absolute URI(s) of the document(s) to process
  : @param options map of options
@@ -73,7 +76,9 @@ declare function sc:check(
   let $start := prof:current-ms()
   return 
   (
-    sc:validate($simplified, $options), 
+    if(not(map:contains($options, $sc:OPT_NO_VALIDATION)))
+    then sc:validate($simplified, $options)
+    else (), 
     sc:profile('validated', $start, $options)
   )
 };
