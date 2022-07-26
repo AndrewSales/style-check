@@ -28,7 +28,7 @@
     </xsl:template>
     
     <xsl:template match="/files/file">
-        <xsl:variable name="source" select="resolve-uri(@src, @xml:base)"/>
+        <xsl:variable name="source" select="@src"/>
         <xsl:variable name="output" select="replace($source, '/word/', '/out/')"/>
         <xsl:message expand-text="true">transforming {$source} to {$output}</xsl:message>
         <xsl:result-document href="{$output}" doctype-system="{$dtd-loc}" indent="no">

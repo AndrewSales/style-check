@@ -8,6 +8,7 @@ import module namespace sc = "http://www.andrewsales.com/style-check" at "../lib
 declare variable $sct:goodDOCX := resolve-uri("proper.docx", static-base-uri());
 declare variable $sct:badDOCX := resolve-uri("bad.docx", static-base-uri());
 declare variable $sct:filenameWithSpaces := resolve-uri('filename%20with%20spaces.docx');
+declare variable $sct:filenameWithDoubleSpace := resolve-uri('filename%20with%20%20spaces.docx');
 declare variable $sct:malformedXML := resolve-uri('malformed.xml');
 
 declare 
@@ -16,7 +17,7 @@ declare
 function sct:cleanup()
 {
   for $dir in ('proper', 'style-error', 'no-errors', 'stylename-with-spaces',
-  'filename%20with%20spaces')
+  'filename%20with%20spaces', 'filename%20with%20%20spaces')
   let $path := resolve-uri($dir)
   return
   if(file:exists($path))
@@ -61,19 +62,25 @@ declare %unit:test('expected', 'sc:docx-zip') function sct:unzip-fail()
  sc:unzip($sct:badDOCX)
 };
 
+(:~ word/document.xml is present in the DOCX file :)
 declare %unit:test function sct:ensure-contents-pass()
 {
   sc:ensure-contents($sct:goodDOCX)
 };
 
+(:~ presence of word/document.xml in the DOCX is reflected in the manifest entry
+ : for this file
+ :)
 declare %unit:test function sct:ensure-contents-src()
 {
   let $file := sc:ensure-contents($sct:goodDOCX)
   
   return
-  unit:assert-equals(
-     data($file/@src),
-     'word/document.xml'
+  unit:assert(
+     ends-with(
+       $file/@src,
+       '/word/document.xml'
+     )
   )
 };
 
@@ -90,12 +97,19 @@ declare %unit:test function sct:build-manifest()
   let $manifest := sc:build-manifest($sct:goodDOCX, map{})
   
   return
-  (unit:assert(
-    $manifest/file/@xml:base => ends-with('/test/proper/')
-  ),
   unit:assert(
-    $manifest/file/@src eq "word/document.xml"
-  ))  
+    $manifest/file/@src => ends-with('/test/proper/word/document.xml')
+  )  
+};
+
+(:~ manifest created before the simplify transform should contain @src paths to 
+the input and @xml:base :)
+declare %unit:test function sct:build-manifest-spaces()
+{
+  let $manifest := sc:build-manifest($sct:filenameWithDoubleSpace, map{})/file
+  
+  return
+  unit:assert(ends-with($manifest/@src, '/filename with  spaces/word/document.xml'))
 };
 
 (:~ manifest returned after the successful transform should now also contain
@@ -111,12 +125,8 @@ declare %unit:test function sct:simplify-styles()
       $manifest/file/@dest/data(), 
       resolve-uri('proper/out/document.xml') => replace('///', '/')
     ),
-    unit:assert-equals(
-      $manifest/file/@src/data(), "word/document.xml"
-    ),
-    unit:assert-equals(
-      $manifest/file/@xml:base/data(),
-      resolve-uri('proper/') => replace('///', '/')
+    unit:assert(
+      ends-with($manifest/file/@src, "/proper/word/document.xml")
     )
   )
 };
@@ -251,6 +261,16 @@ declare %unit:test function sct:filename-with-spaces()
   (
     unit:assert-equals($result/code, <code>0</code>),	(:process succeeded:)
     unit:assert(ends-with($result/errors/@systemId, 'filename with spaces/out/document.xml'))	(:filepath reported correctly:)
+  )
+};
+
+declare %unit:test function sct:filename-with-double-space()
+{
+  let $result := sc:check($sct:filenameWithDoubleSpace, map{})
+  return
+  (
+    unit:assert-equals($result/code, <code>0</code>),	(:process succeeded:)
+    unit:assert(ends-with($result/errors/@systemId, 'filename with  spaces/out/document.xml'))	(:filepath reported correctly:)
   )
 };
 

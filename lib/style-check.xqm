@@ -69,7 +69,7 @@ declare function sc:check(
   let $manifest := sc:build-manifest($docs, $options)
   let $_ := sc:profile('manifest built, '||count($manifest/file)||' files', 
     $start, $options)
-  let $_ := sc:debug('manifest=' || $manifest, $options)
+  let $_ := sc:debug('manifest=' || serialize($manifest), $options)
   let $start := prof:current-ms()
   let $simplified := sc:simplify-styles($manifest)
   let $_ := sc:profile('styles simplified', $start, $options)
@@ -258,7 +258,7 @@ as element(file)+
   let $path := replace($uri, '%20', ' ')
   return
     if(file:exists($path))
-    then <file xml:base='file:/{$unzip-path}' src='{$x}'/>
+    then <file src='file:/{$unzip-path}{$x}'/>
     else error(xs:QName('sc:docx-no-content'), 'no content found: '|| $path ||
     '; expected: ' || $x)
 };
